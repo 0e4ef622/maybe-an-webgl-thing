@@ -130,14 +130,22 @@ window.addEventListener("load", function(){
     function render() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        gl.uniformMatrix4fv(cmatLoc, false, mat4transpose(world.camera.tmat));
+        var t = world.camera.tmat;
+        gl.uniformMatrix4fv(cmatLoc, false, new Float32Array(mat4transpose([
+                        // abe, if you are staring at this attempting to comprehend exactly what this does, i recommend you stop
+                        t[0], t[1], t[2], t[0]*t[3]+t[1]*t[7]+t[2]*t[11],   //        ┌            ┐              ┌            ┐┌            ┐
+                        t[4], t[5], t[6], t[4]*t[3]+t[5]*t[7]+t[6]*t[11],   //        │ a  b  c  d │    this      │ 1  0  0  d ││ a  b  c  0 │   this makes the camera appear to
+                        t[8], t[9], t[10], t[8]*t[3]+t[9]*t[7]+t[10]*t[11], // tmat = │ e  f  g  h │    code      │ 0  1  0  h ││ e  f  g  0 │   rotate around the camera's center
+                        t[12], t[13], t[14], t[15]                          //        │ i  j  k  l │    effec-    │ 0  0  1  l ││ i  j  k  0 │   instead of the world's center
+                        ])));                                               //        │ m  n  o  p │    tively    │ 0  0  0  p ││ 0  0  0  1 │
+                                                                            //        └            ┘    does      └            ┘└            ┘
         gl.uniform3f(lightDirLoc, world.lighting.lightDir.x, world.lighting.lightDir.y, world.lighting.lightDir.z);
         gl.uniform3f(ambientLoc, world.lighting.ambient.r/255, world.lighting.ambient.g/255, world.lighting.ambient.b/255);
 
         for (var i = 0; i < world.objects.length; i++) {
             var obj = world.objects[i];
 
-            gl.uniformMatrix4fv(tmatLoc, false, mat4transpose(obj.tmat));
+            gl.uniformMatrix4fv(tmatLoc, false, new Float32Array(mat4transpose(obj.tmat)));
             gl.uniform4f(colorLoc, obj.color.r/255, obj.color.g/255, obj.color.b/255, obj.color.a/255);
 
             gl.drawElements(gl.TRIANGLES, cube.indices.length, gl.UNSIGNED_BYTE, 0);

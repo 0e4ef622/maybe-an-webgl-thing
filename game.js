@@ -50,15 +50,14 @@ var world = new World();
 
         // for people with an mouse
         cnv.addEventListener("click", function() {
-            cnv.requestPointerLock();
+            if (document.pointerLockElement == cnv) document.exitPointerLock();
+            else cnv.requestPointerLock();
         });
 
         document.addEventListener("mousemove", function(e) {
             if (document.pointerLockElement != cnv) return;
-            yaw += e.movementX/30000;
-            pitch += e.movementY/30000;
-            console.log(e.movementX);
-            console.log(e.movementY);
+            yaw += e.movementX/300;
+            pitch += e.movementY/300;
 
             world.camera.resetRotation().rotate(0, yaw, 0).rotate(pitch, 0, 0);
         });
@@ -69,7 +68,7 @@ var world = new World();
 
 function World() {
     this.objects = [];
-    this.camera = new Camera();
+    this.camera = new Generic();
     this.lighting = {
         ambient: { // 0 to 255
             r: 100,
@@ -89,12 +88,12 @@ function Generic(x, y, z) {
     y = typeof y == "undefined" ? 0 : y;
     z = typeof z == "undefined" ? 0 : z;
 
-    this.tmat = new Float32Array([
+    this.tmat = [
             1, 0, 0, x,
             0, 1, 0, y,
             0, 0, 1, z,
             0, 0, 0, 1
-    ]);
+    ];
 
     var t = this;
     this.pos = {
@@ -133,27 +132,27 @@ function Generic(x, y, z) {
                 [ this.tmat[0], this.tmat[1], this.tmat[2],
                 this.tmat[4], this.tmat[5], this.tmat[6],
                 this.tmat[8], this.tmat[9], this.tmat[10] ]);
-        this.tmat = new Float32Array([
+        this.tmat = [
                 r[0], r[1], r[2],  this.tmat[3],
                 r[3], r[4], r[5],  this.tmat[7],
                 r[6], r[7], r[8], this.tmat[11],
                    0,    0,    0,             1
-        ]);
+        ];
 
         return this;
     };
     this.resetRotation = function() {
-        this.tmat = new Float32Array([
+        this.tmat = [
                 1,0,0,this.tmat[3],
                 0,1,0,this.tmat[7],
                 0,0,1,this.tmat[11],
                 0,0,0,1
-        ]);
+        ];
         return this;
     };
 }
 
-function Camera(x, y, z) { // camera needs its own special rotate function :P
+/*function Camera(x, y, z) { // camera needs its own special rotate function :P
     Generic.call(this, x, y, z);
 
     this.rotate = function(x, y, z) { // radians
@@ -181,7 +180,7 @@ function Camera(x, y, z) { // camera needs its own special rotate function :P
 
         return this;
     };
-}
+}*/
 
 function Cube(x, y, z, r, g, b, a) {
     x = typeof x == "undefined" ? 0 : x;
