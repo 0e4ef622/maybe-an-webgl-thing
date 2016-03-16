@@ -1,21 +1,70 @@
+// TODO fullscreen
 var world = new World();
 
 (function() {
 
-    world.objects.push(new Cube(3, 0, 0, 255));
-    world.objects.push(new Cube(0, 0, 0, 0, 255));
-    world.objects.push(new Cube(-3, 0, 0, 0, 0, 255));
-    world.camera.pos.z = -10;
+    // H
+    world.objects.push(new Cube(-4, .5, 0, 230, 230, 0, 255));
+    world.objects.push(new Cube(-5, 0, 0, 230, 230, 0, 255, 1, 4, 1));
+    world.objects.push(new Cube(-3, 0, 0, 230, 230, 0, 255, 1, 4, 1));
+    // A
+    world.objects.push(new Cube(0, -.5, 0, 230, 230, 0, 255));
+    world.objects.push(new Cube(-1, -.5, 0, 230, 230, 0, 255, 1, 3, 1));
+    world.objects.push(new Cube(1, -.5, 0, 230, 230, 0, 255, 1, 3, 1));
+    world.objects.push(new Cube(0, 1.5, 0, 230, 230, 0, 255));
+    // I
+    world.objects.push(new Cube(4, 0, 0, 230, 230, 0, 255, 1, 2, 1));
+    world.objects.push(new Cube(4, 1.5, 0, 230, 230, 0, 255, 3, 1, 1));
+    world.objects.push(new Cube(4, -1.5, 0, 230, 230, 0, 255, 3, 1, 1));
+    // A
+    world.objects.push(new Cube(5, -.5, 26, 0, 150, 0, 255));
+    world.objects.push(new Cube(6, -.5, 26, 0, 150, 0, 255, 1, 3, 1));
+    world.objects.push(new Cube(4, -.5, 26, 0, 150, 0, 255, 1, 3, 1));
+    world.objects.push(new Cube(5, 1.5, 26, 0, 150, 0, 255));
+    // S
+    world.objects.push(new Cube(2, .5, 26, 0, 150, 0, 255));
+    world.objects.push(new Cube(1.5, 1.5, 26, 0, 150, 0, 255, 2, 1, 1));
+    world.objects.push(new Cube(1, -.5, 26, 0, 150, 0, 255));
+    world.objects.push(new Cube(1.5, -1.5, 26, 0, 150, 0, 255, 2, 1, 1));
+    // D
+    world.objects.push(new Cube(-1, 0, 26, 0, 150, 0, 255, 1, 4, 1));
+    world.objects.push(new Cube(-2, -1.5, 26, 0, 150, 0, 255));
+    world.objects.push(new Cube(-2, 1.5, 26, 0, 150, 0, 255));
+    world.objects.push(new Cube(-3, 0, 26, 0, 150, 0, 255, 1, 2, 1));
+    // F
+    world.objects.push(new Cube(-5, 0, 26, 0, 150, 0, 255, 1, 4, 1));
+    world.objects.push(new Cube(-6.5, 1.5, 26, 0, 150, 0, 255, 2, 1, 1));
+    world.objects.push(new Cube(-6, -.5, 26, 0, 150, 0, 255));
+    // teh graund
+    world.objects.push(new Cube(0, -3, 0, 128, 128, 128, 255, 200, 1, 200));
 
+    world.camera.pos.z = -13;
+
+    var pressedKeys = {};
     var pt = (new Date()).getTime();
     setInterval(function() {
         var t = (new Date()).getTime();
         var dt = t - pt;
         pt = t;
-        world.objects[0].rotate(0, 0, dt/1000);
-        world.objects[1].rotate(0, dt/1000, 0);
-        world.objects[2].rotate(Math.sqrt(1/3)*dt/1000, Math.sqrt(1/3)*dt/1000, Math.sqrt(1/3)*dt/1000);
+
+        world.objects[7].rotate(0, dt/1000, 0);
+        world.objects[8].rotate(0, dt/1000, 0);
+        world.objects[9].rotate(0, dt/1000, 0);
+
+        pressedKeys['U+0057'] && world.camera.move(0, 0, .1);
+        pressedKeys['U+0041'] && world.camera.move(.1, 0, 0);
+        pressedKeys['U+0053'] && world.camera.move(0, 0, -.1);
+        pressedKeys['U+0044'] && world.camera.move(-.1, 0, 0);
+        pressedKeys['U+0051'] && world.camera.move(0, .1, 0);
+        pressedKeys['U+0045'] && world.camera.move(0, -.1, 0);
     }, 10);
+
+    window.addEventListener("keydown", function(e) {
+        pressedKeys[e.key || e.keyIdentifier] = 1;
+    });
+    window.addEventListener("keyup", function(e) {
+        pressedKeys[e.key || e.keyIdentifier] = 0;
+    });
 
     window.addEventListener("load", function() {
         var cnv = document.getElementById("cnv");
@@ -54,13 +103,14 @@ var world = new World();
             else cnv.requestPointerLock();
         });
 
-        document.addEventListener("mousemove", function(e) {
+        window.addEventListener("mousemove", function(e) {
             if (document.pointerLockElement != cnv) return;
             yaw += e.movementX/300;
             pitch += e.movementY/300;
 
             world.camera.resetRotation().rotate(0, yaw, 0).rotate(pitch, 0, 0);
         });
+
     });
 
 })();
@@ -68,7 +118,7 @@ var world = new World();
 
 function World() {
     this.objects = [];
-    this.camera = new Generic();
+    this.camera = new Camera();
     this.lighting = {
         ambient: { // 0 to 255
             r: 100,
@@ -76,9 +126,9 @@ function World() {
             b: 100
         },
         lightDir: { // unit vector
-            x: .207514,
-            y: -.691714,
-            z: -.691714
+            x: .267261,
+            y: -.534522,
+            z: -.801784
         }
     };
 }
@@ -128,10 +178,7 @@ function Generic(x, y, z) {
 
         var r = mat3xmat3([ cy*cz, sx*sy*cz-cx*sz, cx*sy*cz+sx*sz,
                 cy*sz, sx*sy*sz+cx*cz, cx*sy*sz-sx*cz,
-                -sy,          sx*cy,          cx*cy ],
-                [ this.tmat[0], this.tmat[1], this.tmat[2],
-                this.tmat[4], this.tmat[5], this.tmat[6],
-                this.tmat[8], this.tmat[9], this.tmat[10] ]);
+                -sy,          sx*cy,          cx*cy ], mat4tomat3(this.tmat));
         this.tmat = [
                 r[0], r[1], r[2],  this.tmat[3],
                 r[3], r[4], r[5],  this.tmat[7],
@@ -150,39 +197,35 @@ function Generic(x, y, z) {
         ];
         return this;
     };
-}
-
-/*function Camera(x, y, z) { // camera needs its own special rotate function :P
-    Generic.call(this, x, y, z);
-
-    this.rotate = function(x, y, z) { // radians
-        var c = Math.cos,
-            s = Math.sin,
-            cx = c(x),
-            sx = s(x),
-            cy = c(y),
-            sy = s(y),
-            cz = c(z),
-            sz = s(z);
-
-        var r = mat3xmat3([ cy*cz, sx*sy*cz-cx*sz, cx*sy*cz+sx*sz,
-                cy*sz, sx*sy*sz+cx*cz, cx*sy*sz-sx*cz,
-                -sy,          sx*cy,          cx*cy ],
-                [ this.tmat[0], this.tmat[1], this.tmat[2],
-                this.tmat[4], this.tmat[5], this.tmat[6],
-                this.tmat[8], this.tmat[9], this.tmat[10] ]);
-        this.tmat = new Float32Array([                                                     // ┌            ┐┌            ┐
-                r[0], r[1], r[2],  r[0]*this.tmat[3]+r[1]*this.tmat[7]+r[2]*this.tmat[11], // │ the      0 ││ 1  0  0  x │
-                r[3], r[4], r[5],  r[3]*this.tmat[3]+r[4]*this.tmat[7]+r[5]*this.tmat[11], // │ rotation 0 ││ 0  1  0  y │
-                r[6], r[7], r[8],  r[6]*this.tmat[3]+r[7]*this.tmat[7]+r[8]*this.tmat[11], // │ matrix   0 ││ 0  0  1  z │
-                   0,    0,    0,             1                                            // │ 0  0  0  1 ││ 0  0  0  1 │
-        ]);                                                                                // └            ┘└            ┘
-
+    this.move = function(x, y, z) {
+        var r = this.tmat;
+        this.tmat = [
+            r[0], r[1], r[2], x*r[0]+y*r[1]+z*r[2]+r[3],
+            r[4], r[5], r[6], x*r[4]+y*r[5]+z*r[6]+r[7],
+            r[8], r[9], r[10], x*r[8]+y*r[9]+z*r[10]+r[11],
+            r[12], r[13], r[14], r[15]
+        ];
         return this;
     };
-}*/
+}
 
-function Cube(x, y, z, r, g, b, a) {
+function Camera(x, y, z) { // camera needs its own special move function for some reason .-.
+    Generic.call(this, x, y, z);
+
+    this.move = function(x, y, z) {
+        var m = this.tmat;
+        var r = mat3inverse(mat4tomat3(m));
+        this.tmat = [
+            r[0], r[3], r[6], x*r[0]+y*r[1]+z*r[2]+m[3],
+            r[1], r[4], r[7], x*r[3]+y*r[4]+z*r[5]+m[7],
+            r[2], r[5], r[8], x*r[6]+y*r[7]+z*r[8]+m[11],
+            m[12], m[13], m[14], m[15]
+        ];
+        return this;
+    };
+}
+
+function Cube(x, y, z, r, g, b, a, sx, sy, sz) {
     x = typeof x == "undefined" ? 0 : x;
     y = typeof y == "undefined" ? 0 : y;
     z = typeof z == "undefined" ? 0 : z;
@@ -190,8 +233,15 @@ function Cube(x, y, z, r, g, b, a) {
     g = typeof g == "undefined" ? 0 : g;
     b = typeof b == "undefined" ? 0 : b;
     a = typeof a == "undefined" ? 255 : a;
+    sx = typeof sx == "undefined" ? 1 : sx;
+    sy = typeof sy == "undefined" ? 1 : sy;
+    sz = typeof sz == "undefined" ? 1 : sz;
 
     Generic.call(this, x, y, z);
+
+    this.tmat[0] = sx;
+    this.tmat[5] = sy;
+    this.tmat[10] = sz;
 
     this.color = {
         r: r,
@@ -233,6 +283,22 @@ function mat4transpose(m) {
         m[1], m[5], m[9], m[13],
         m[2], m[6], m[10], m[14],
         m[3], m[7], m[11], m[15]
+    ];
+}
+
+function mat3transpose(m) {
+    return [
+        m[0], m[3], m[6],
+        m[1], m[4], m[7],
+        m[2], m[5], m[8]
+    ];
+}
+
+function mat4tomat3(m) {
+    return [
+        m[0], m[1], m[2],
+        m[4], m[5], m[6],
+        m[8], m[9], m[10]
     ];
 }
 
