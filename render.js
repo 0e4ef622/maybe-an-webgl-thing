@@ -1,3 +1,4 @@
+// TODO shadows
 window.addEventListener("load", function(){
 
     var cube = {};
@@ -48,6 +49,8 @@ window.addEventListener("load", function(){
             22, 23, 20
     ]);
 
+    var shadowResolution = [1024, 1024];
+
     var width = 640;
     var height = 480;
     var aspectRatio = width/height;
@@ -63,6 +66,9 @@ window.addEventListener("load", function(){
             0,n/t, 0, 0,
             0, 0,-(f+n)/(f-n), -1,
             0, 0, -2*f*n/(f-n), 0
+    ]);
+    var depthPmat = new Float32Array([
+            //ortho matrix here
     ]);
 
     var vtxSrc =
@@ -108,6 +114,16 @@ window.addEventListener("load", function(){
             "lowp vec3 specular = spec * vec3(.5, .5, .5);"+
             "gl_FragColor = vec4(lighting + specular, 1) * color;"+
         "}";
+    var depthMapVtxSrc =
+        "attribute vec3 pos;"+
+        "uniform mat4 tmat;"+
+        "uniform mat4 cmat;"+
+        "uniform mat4 pmat;"+
+
+        "void main() {"+
+            "gl_Position = pmat * cmat * tmat * vec4(pos, 1.0);"+
+        "}";
+    var depthMapFragSrc = "void main(){}";
 
     var cnv = document.getElementById("cnv");
     cnv.width = width;
@@ -119,20 +135,28 @@ window.addEventListener("load", function(){
         return;
     }
 
+    var wglDepthTxtrExtension = gl.getExtension("WEBGL_depth_texture") || gl.getExtension("WEBKIT_WEBGL_depth_texture") || gl.getExtension("MOZ_WEBGL_depth_texture");
+    if (!wglDepthTxtrExtension) {
+        alert("Your browser does not support the WEBGL_depth_texture extension :(");
+        return;
+    }
+
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
     gl.frontFace(gl.CW);
     gl.clearColor(.5, .6, 1, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
     var prgm = compileShaders(gl, vtxSrc, fragSrc);
-    gl.useProgram(prgm);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    var depthMapPrgm = compileShaders(gl, depthMapVtxSrc, depthMapFragSrc);
 
     var buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, cube.vertices, gl.STATIC_DRAW);
     gl.vertexAttribPointer(gl.getAttribLocation(prgm, "pos"), 3, gl.FLOAT, false, 24, 0);
     gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "pos"));
+    gl.vertexAttribPointer(gl.getAttribLocation(depthMapPrgm, "pos"), 3, gl.FLOAT, false, 24, 0);
+    gl.enableVertexAttribArray(gl.getAttribLocation(depthMapPrgm, "pos"));
     gl.vertexAttribPointer(gl.getAttribLocation(prgm, "norm"), 3, gl.FLOAT, false, 24, 12);
     gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "norm"));
 
@@ -140,22 +164,49 @@ window.addEventListener("load", function(){
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elemBuf);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, cube.indices, gl.STATIC_DRAW);
 
-    gl.uniformMatrix4fv(gl.getUniformLocation(prgm, "pmat"), false, pmat);
+    var depthMapFBO = gl.createFramebuffer();
+        depthMap = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, depthMap);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, shadowResolution[0], shadowResolution[1], 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthMap, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     var tmatLoc = gl.getUniformLocation(prgm, "tmat"),
         nmatLoc = gl.getUniformLocation(prgm, "nmat"),
         cmatLoc = gl.getUniformLocation(prgm, "cmat"),
+        pmatLoc = gl.getUniformLocation(prgm, "pmat"),
         colorLoc = gl.getUniformLocation(prgm, "color"),
         lightDirLoc = gl.getUniformLocation(prgm, "light_dir"),
-        ambientLoc = gl.getUniformLocation(prgm, "ambient");
-        camPosLoc = gl.getUniformLocation(prgm, "cam_pos");
+        ambientLoc = gl.getUniformLocation(prgm, "ambient"),
+        camPosLoc = gl.getUniformLocation(prgm, "cam_pos"),
+        depthMapTmatLoc = gl.getUniformLocation(depthMapPrgm, "tmat"),
+        depthMapCmatLoc = gl.getUniformLocation(depthMapPrgm, "cmat"),
+        depthMapPmatLoc = gl.getUniformLocation(depthMapPrgm, "pmat");
 
-    window.requestAnimationFrame = (window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame);
+    window.requestAnimationFrame = (window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || function(f){setTimeout(f,10);});
 
     var frames = 0;
     function render() {
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
+          gl.clear(gl.DEPTH_BUFFER_BIT);
+          gl.viewport(0, 0, shadowResolution[0], shadowResolution[1]);
+          gl.colorMask(0, 0, 0, 0);
+          /*gl.uniformMatrix4fv(depthMapCmatLoc, false, new Float32Array([
+                      uh
+          ]));*/
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
+        gl.viewport(0, 0, cnv.width, cnv.height);
+        gl.colorMask(1, 1, 1, 1);
+
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.useProgram(prgm);
+
+        gl.uniformMatrix4fv(gl.getUniformLocation(prgm, "pmat"), false, pmat);
         var t = world.camera.tmat;
         gl.uniformMatrix4fv(cmatLoc, false, new Float32Array(mat4transpose([
                         // abe, if you are staring at this attempting to comprehend exactly what this does, i recommend you stop
@@ -169,16 +220,8 @@ window.addEventListener("load", function(){
         gl.uniform3f(lightDirLoc, world.lighting.lightDir.x, world.lighting.lightDir.y, world.lighting.lightDir.z);
         gl.uniform3f(ambientLoc, world.lighting.ambient.r/255, world.lighting.ambient.g/255, world.lighting.ambient.b/255);
 
-        for (var i = 0; i < world.objects.length; i++) {
-            var obj = world.objects[i];
+        drawWorld(gl, world);
 
-            var nmat = mat3inverse(mat4tomat3(obj.tmat)); // since webgl expects the matrix to be in column major order, we dont need to transpose
-            gl.uniformMatrix3fv(nmatLoc, false, new Float32Array(nmat));
-            gl.uniformMatrix4fv(tmatLoc, false, new Float32Array(mat4transpose(obj.tmat)));
-            gl.uniform4f(colorLoc, obj.color.r/255, obj.color.g/255, obj.color.b/255, obj.color.a/255);
-
-            gl.drawElements(gl.TRIANGLES, cube.indices.length, gl.UNSIGNED_BYTE, 0);
-        }
         frames++;
         requestAnimationFrame(render);
     }
@@ -220,6 +263,19 @@ window.addEventListener("load", function(){
         gl.deleteShader(frag);
 
         return prgm;
+    }
+
+    function drawWorld(gl, world) {
+        for (var i = 0; i < world.objects.length; i++) {
+            var obj = world.objects[i];
+
+            var nmat = mat3inverse(mat4tomat3(obj.tmat)); // since webgl expects the matrix to be in column major order, we dont need to transpose
+            gl.uniformMatrix3fv(nmatLoc, false, new Float32Array(nmat));
+            gl.uniformMatrix4fv(tmatLoc, false, new Float32Array(mat4transpose(obj.tmat)));
+            gl.uniform4f(colorLoc, obj.color.r/255, obj.color.g/255, obj.color.b/255, obj.color.a/255);
+
+            gl.drawElements(gl.TRIANGLES, cube.indices.length, gl.UNSIGNED_BYTE, 0);
+        }
     }
 
 });

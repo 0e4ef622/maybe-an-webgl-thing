@@ -99,8 +99,7 @@ var world = new World();
 
         // for people with an mouse
         cnv.addEventListener("click", function() {
-            if (document.pointerLockElement == cnv) document.exitPointerLock();
-            else cnv.requestPointerLock();
+            if (document.pointerLockElement != cnv) cnv.requestPointerLock();
         });
 
         window.addEventListener("mousemove", function(e) {
@@ -273,6 +272,31 @@ function mat3inverse(m) { // kinda copied off wikipedia
         I = a*e-b*d,
         s = 1/(a*A+b*B+c*C); // s for scalar :P
     return [s*A,s*D,s*G,s*B,s*E,s*H,s*C,s*F,s*I];
+}
+
+function cross(a, b) {
+    return {x: a.y*b.z-a.z*b.y,
+            y: a.z*b.x-a.x*b.z,
+            z: a.x*b.y-a.y*b.x};
+}
+
+function normalize(v) {
+    var l = Math.sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
+    return {x: v.x/l,
+            y: v.y/l,
+            z: v.z/l};
+}
+
+function lookAt(pos, dir) {
+    var xaxis = normalize(cross({x:0,y:1,z:0}, dir));
+    var yaxis = cross(dir, xaxis);
+
+    return [
+        xaxis.x, xaxis.y, xaxis.z, pos.x,
+        yaxis.x, yaxis.y, yaxis.z, pos.y,
+          dir.x,   dir.y,   dir.z, pos.z,
+              0,       0,       0,     1
+    ];
 }
 
 // HARD CODING FTW
