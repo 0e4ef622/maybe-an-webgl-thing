@@ -51,14 +51,12 @@ var world = new World();
         world.objects[8].rotate(0, dt/1000, 0);
         world.objects[9].rotate(0, dt/1000, 0);
 
-        /*
-        pressedKeys['U+0057'] && world.camera.move(0, 0, .1);
-        pressedKeys['U+0041'] && world.camera.move(.1, 0, 0);
-        pressedKeys['U+0053'] && world.camera.move(0, 0, -.1);
-        pressedKeys['U+0044'] && world.camera.move(-.1, 0, 0);
-        pressedKeys['U+0051'] && world.camera.move(0, .1, 0);
-        pressedKeys['U+0045'] && world.camera.move(0, -.1, 0);
-        */
+        pressedKeys['U+0057'] && world.camera.move(0, 0, -.1);
+        pressedKeys['U+0041'] && world.camera.move(-.1, 0, 0);
+        pressedKeys['U+0053'] && world.camera.move(0, 0, .1);
+        pressedKeys['U+0044'] && world.camera.move(.1, 0, 0);
+        pressedKeys['U+0051'] && world.camera.move(0, -.1, 0);
+        pressedKeys['U+0045'] && world.camera.move(0, .1, 0);
 
     }, 10);
 

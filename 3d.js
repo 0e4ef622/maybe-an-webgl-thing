@@ -93,6 +93,15 @@ function Camera(x, y, z) {
     this.dir = new Vec3(0, 0, -1); // must be a normal vector
 }
 
+Camera.prototype.move = function (x, y, z) {
+    var up = new Vec3(0, 1, 0);
+    var right = up.cross(this.dir);
+    up = this.dir.cross(right);
+    this.pos = this.pos.add(right.mult(x)).add(up.mult(y)).add(this.dir.mult(z));
+
+    return this;
+}
+
 function Cube(x, y, z, r, g, b, a, sx, sy, sz) {
     x = typeof x == "undefined" ? 0 : x;
     y = typeof y == "undefined" ? 0 : y;
