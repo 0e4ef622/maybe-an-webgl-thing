@@ -207,16 +207,26 @@ window.addEventListener("load", function(){
         gl.useProgram(prgm);
 
         gl.uniformMatrix4fv(gl.getUniformLocation(prgm, "pmat"), false, pmat);
-        var t = world.camera.tmat;
-        gl.uniformMatrix4fv(cmatLoc, false, new Float32Array(mat4transpose([
-                        // abe, if you are staring at this attempting to comprehend exactly what this does, i recommend you stop
-                        t[0], t[1], t[2], t[0]*t[3]+t[1]*t[7]+t[2]*t[11],   //        ┌            ┐              ┌            ┐┌            ┐
-                        t[4], t[5], t[6], t[4]*t[3]+t[5]*t[7]+t[6]*t[11],   //        │ a  b  c  d │    this      │ 1  0  0  d ││ a  b  c  0 │   this makes the camera appear to
-                        t[8], t[9], t[10], t[8]*t[3]+t[9]*t[7]+t[10]*t[11], // tmat = │ e  f  g  h │    code      │ 0  1  0  h ││ e  f  g  0 │   rotate around the camera's center
-                        t[12], t[13], t[14], t[15]                          //        │ i  j  k  l │    effec-    │ 0  0  1  l ││ i  j  k  0 │   instead of the world's center
-                        ])));                                               //        │ m  n  o  p │    tively    │ 0  0  0  p ││ 0  0  0  1 │
-                                                                            //        └            ┘    does      └            ┘└            ┘
-        gl.uniform3f(camPosLoc, -world.camera.pos.x, -world.camera.pos.y, -world.camera.pos.z);
+
+        /* obscure code that i probably by now forgot how it works */
+        var d = world.camera.dir;
+        var p = world.camera.pos;
+        var up = new Vec3(0, 1, 0);
+        var right = up.cross(d).norm();
+        up = d.cross(right);
+        var lookat = new Mat4([
+                right.x, right.y, right.z, 0,
+                up.x, up.y, up.z, 0,
+                d.x, d.y, d.z, 0,
+                0, 0, 0, 1]);
+        p = new Mat4([
+                1, 0, 0, -p.x,
+                0, 1, 0, -p.y,
+                0, 0, 1, -p.z,
+                0, 0, 0, 1]);
+        var cmat = lookat.mult(p).transpose().mat;
+        gl.uniformMatrix4fv(cmatLoc, false, new Float32Array(cmat));
+        gl.uniform3f(camPosLoc, p.x, p.y, p.z);
         gl.uniform3f(lightDirLoc, world.lighting.lightDir.x, world.lighting.lightDir.y, world.lighting.lightDir.z);
         gl.uniform3f(ambientLoc, world.lighting.ambient.r/255, world.lighting.ambient.g/255, world.lighting.ambient.b/255);
 

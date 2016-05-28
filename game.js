@@ -38,7 +38,7 @@ var world = new World();
     // teh graund
     world.objects.push(new Cube(0, -3, 0, 128, 128, 128, 255, 200, 1, 200));
 
-    world.camera.pos.z = -13;
+    world.camera.pos.z = 13;
 
     var pressedKeys = {};
     var pt = (new Date()).getTime();
@@ -51,12 +51,15 @@ var world = new World();
         world.objects[8].rotate(0, dt/1000, 0);
         world.objects[9].rotate(0, dt/1000, 0);
 
+        /*
         pressedKeys['U+0057'] && world.camera.move(0, 0, .1);
         pressedKeys['U+0041'] && world.camera.move(.1, 0, 0);
         pressedKeys['U+0053'] && world.camera.move(0, 0, -.1);
         pressedKeys['U+0044'] && world.camera.move(-.1, 0, 0);
         pressedKeys['U+0051'] && world.camera.move(0, .1, 0);
         pressedKeys['U+0045'] && world.camera.move(0, -.1, 0);
+        */
+
     }, 10);
 
     window.addEventListener("keydown", function(e) {
@@ -107,7 +110,9 @@ var world = new World();
             yaw += e.movementX/300;
             pitch += e.movementY/300;
 
-            world.camera.resetRotation().rotate(0, yaw, 0).rotate(pitch, 0, 0);
+            world.camera.dir.x = Math.cos(pitch) * Math.cos(yaw);
+            world.camera.dir.y = Math.sin(pitch);
+            world.camera.dir.z = Math.cos(pitch) * Math.sin(yaw);;
         });
 
     });
@@ -124,11 +129,7 @@ function World() {
             g: 100,
             b: 100
         },
-        lightDir: { // unit vector
-            x: .267261,
-            y: -.534522,
-            z: -.801784
-        }
+        lightDir: new Vec3(0.267261, -0.534522, -0.801784) // unit vector
     };
 }
 
@@ -138,10 +139,10 @@ function Generic(x, y, z) {
     z = typeof z == "undefined" ? 0 : z;
 
     this.tmat = [
-            1, 0, 0, x,
-            0, 1, 0, y,
-            0, 0, 1, z,
-            0, 0, 0, 1
+        1, 0, 0, x,
+        0, 1, 0, y,
+        0, 0, 1, z,
+        0, 0, 0, 1
     ];
 
     var t = this;
@@ -208,7 +209,7 @@ function Generic(x, y, z) {
     };
 }
 
-function Camera(x, y, z) { // camera needs its own special move function for some reason .-.
+/*function Camera(x, y, z) { // camera needs its own special move function for some reason .-.
     Generic.call(this, x, y, z);
 
     this.move = function(x, y, z) {
@@ -222,6 +223,14 @@ function Camera(x, y, z) { // camera needs its own special move function for som
         ];
         return this;
     };
+}*/
+function Camera(x, y, z) {
+    if (typeof x == "undefined") x = 0;
+    if (typeof y == "undefined") y = 0;
+    if (typeof z == "undefined") z = 0;
+
+    this.pos = new Vec3(x, y, z);
+    this.dir = new Vec3(0, 0, -1); // must be a normal vector
 }
 
 function Cube(x, y, z, r, g, b, a, sx, sy, sz) {
@@ -250,6 +259,19 @@ function Cube(x, y, z, r, g, b, a, sx, sy, sz) {
     };
 }
 
+function lookAt(pos, dir, up) {
+    if (typeof up == undefined) up = new Vec3(0, 1, 0);
+    var x = up.cross(dir).norm();
+    var y = dir.cross(x);
+
+    return [
+          x.x,   x.y,   x.z, pos.x,
+          y.x,   y.y,   y.z, pos.y,
+        dir.x, dir.y, dir.z, pos.z,
+            0,     0,     0,     1
+    ];
+}
+
 // everything is row major order
 function mat3inverse(m) { // kinda copied off wikipedia
     var a = m[0],
@@ -272,31 +294,6 @@ function mat3inverse(m) { // kinda copied off wikipedia
         I = a*e-b*d,
         s = 1/(a*A+b*B+c*C); // s for scalar :P
     return [s*A,s*D,s*G,s*B,s*E,s*H,s*C,s*F,s*I];
-}
-
-function cross(a, b) {
-    return {x: a.y*b.z-a.z*b.y,
-            y: a.z*b.x-a.x*b.z,
-            z: a.x*b.y-a.y*b.x};
-}
-
-function normalize(v) {
-    var l = Math.sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
-    return {x: v.x/l,
-            y: v.y/l,
-            z: v.z/l};
-}
-
-function lookAt(pos, dir) {
-    var xaxis = normalize(cross({x:0,y:1,z:0}, dir));
-    var yaxis = cross(dir, xaxis);
-
-    return [
-        xaxis.x, xaxis.y, xaxis.z, pos.x,
-        yaxis.x, yaxis.y, yaxis.z, pos.y,
-          dir.x,   dir.y,   dir.z, pos.z,
-              0,       0,       0,     1
-    ];
 }
 
 // HARD CODING FTW
