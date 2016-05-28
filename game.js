@@ -100,7 +100,7 @@ var world = new World();
 
         // for people with an mouse
         cnv.addEventListener("click", function() {
-            if (document.pointerLockElement != cnv) cnv.requestPointerLock();
+            if (document.pointerLockElement != cnv) (cnv.requestPointerLock || cnv.mozRequestPointerLock)();
         });
 
         window.addEventListener("mousemove", function(e) {
