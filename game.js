@@ -105,8 +105,8 @@ var world = new World();
 
         window.addEventListener("mousemove", function(e) {
             if (document.pointerLockElement != cnv) return;
-            yaw += e.movementX/300;
-            pitch += e.movementY/300;
+            yaw += (e.movementX || e.mozMovementX)/300;
+            pitch += (e.movementY || e.mozMovementY)/300;
 
             world.camera.dir.x = Math.cos(pitch) * Math.cos(yaw);
             world.camera.dir.y = Math.sin(pitch);
