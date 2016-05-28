@@ -100,11 +100,11 @@ var world = new World();
 
         // for people with an mouse
         cnv.addEventListener("click", function() {
-            if (document.pointerLockElement != cnv) (cnv.requestPointerLock || cnv.mozRequestPointerLock)();
+            if ((document.pointerLockElement || document.mozPointerLockElement) != cnv) (cnv.requestPointerLock || cnv.mozRequestPointerLock).bind(cnv)();
         });
 
         window.addEventListener("mousemove", function(e) {
-            if (document.pointerLockElement != cnv) return;
+            if ((document.pointerLockElement || document.mozPointerLockElement) != cnv) return;
             yaw += (e.movementX || e.mozMovementX)/300;
             pitch += (e.movementY || e.mozMovementY)/300;
 
