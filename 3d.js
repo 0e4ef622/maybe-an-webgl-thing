@@ -95,7 +95,7 @@ function Camera(x, y, z) {
 
 Camera.prototype.move = function (x, y, z) {
     var up = new Vec3(0, 1, 0);
-    var right = up.cross(this.dir);
+    var right = up.cross(this.dir).norm();
     up = this.dir.cross(right);
     this.pos = this.pos.add(right.mult(x)).add(up.mult(y)).add(this.dir.mult(z));
 
@@ -131,14 +131,16 @@ function Cube(x, y, z, r, g, b, a, sx, sy, sz) {
 Cube.prototype = Object.create(Generic.prototype);
 
 function lookAt(pos, dir, up) {
-    if (typeof up == undefined) up = new Vec3(0, 1, 0);
+    if (typeof up == "undefined") up = new Vec3(0, 1, 0);
+    dir = dir.neg();
     var x = up.cross(dir).norm();
     var y = dir.cross(x);
+    //x = x.neg();
 
-    return new Mat4([
-          x.x,   x.y,   x.z, pos.x,
-          y.x,   y.y,   y.z, pos.y,
-        dir.x, dir.y, dir.z, pos.z,
+    return (new Mat4([
+          x.x,   x.y,   x.z, x.x*pos.x+x.y*pos.y+x.z*pos.z,
+          y.x,   y.y,   y.z, y.x*pos.x+y.y*pos.y+y.z*pos.z,
+        dir.x, dir.y, dir.z, dir.x*pos.x+dir.y*pos.y+dir.z*pos.z,
             0,     0,     0,     1
-    ]);
+    ]));
 }
