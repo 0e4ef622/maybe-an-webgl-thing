@@ -279,9 +279,10 @@ window.addEventListener("load", function(){
         for (var i = 0; i < world.objects.length; i++) {
             var obj = world.objects[i];
 
-            var nmat = mat3inverse(mat4tomat3(obj.tmat)); // since webgl expects the matrix to be in column major order, we dont need to transpose
+            var nmat = (new Mat3(obj.tmat)).inverse().mat; // since webgl expects the matrix to be in column major order, we dont need to transpose
+
             gl.uniformMatrix3fv(nmatLoc, false, new Float32Array(nmat));
-            gl.uniformMatrix4fv(tmatLoc, false, new Float32Array(mat4transpose(obj.tmat)));
+            gl.uniformMatrix4fv(tmatLoc, false, new Float32Array(obj.tmat.transpose().mat));
             gl.uniform4f(colorLoc, obj.color.r/255, obj.color.g/255, obj.color.b/255, obj.color.a/255);
 
             gl.drawElements(gl.TRIANGLES, cube.indices.length, gl.UNSIGNED_BYTE, 0);

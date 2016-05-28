@@ -12,7 +12,11 @@ function Mat3(a) {
     else if (typeof a === "number")
         this.mat = [a, 0, 0,
                     0, a, 0,
-                    0, 0, a]
+                    0, 0, a];
+    else if (a.constructor === Mat4)
+        this.mat = [a.mat[0], a.mat[1], a.mat[2],
+                    a.mat[4], a.mat[5], a.mat[6],
+                    a.mat[8], a.mat[9], a.mat[10]];
     else if (a.constructor === Array) {
         if (a.length === 9) this.mat = a;
     } else console.error("Mat3 called with invalid arguments");
@@ -155,6 +159,11 @@ function Mat4(a) {
                     0, a, 0, 0,
                     0, 0, a, 0,
                     0, 0, 0, a];
+    else if (a.constructor === Mat3)
+        this.mat = [a.mat[0], a.mat[1], a.mat[2], 0,
+                    a.mat[3], a.mat[4], a.mat[5], 0,
+                    a.mat[6], a.mat[7], a.mat[8], 0,
+                           0,        0,        0, 1];
     else if (a.constructor === Array) {
         if (a.length === 16) this.mat = a;
     } else console.error("Mat3 called with invalid arguments");

@@ -119,7 +119,6 @@ var world = new World();
 
 })();
 
-
 function World() {
     this.objects = [];
     this.camera = new Camera();
@@ -138,31 +137,31 @@ function Generic(x, y, z) {
     y = typeof y == "undefined" ? 0 : y;
     z = typeof z == "undefined" ? 0 : z;
 
-    this.tmat = [
+    this.tmat = new Mat4([
         1, 0, 0, x,
         0, 1, 0, y,
         0, 0, 1, z,
         0, 0, 0, 1
-    ];
+    ]);
 
     var t = this;
     this.pos = {
         get x() {
-            return t.tmat[3];
+            return t.tmat.mat[3];
         },
         set x(v) {
-            t.tmat[3] = v; },
+            t.tmat.mat[3] = v; },
         get y() {
-            return t.tmat[7];
+            return t.tmat.mat[7];
         },
         set y(v) {
-            t.tmat[7] = v;
+            t.tmat.mat[7] = v;
         },
         get z() {
-            return t.tmat[11];
+            return t.tmat.mat[11];
         },
         set z(v) {
-            t.tmat[11] = v;
+            t.tmat.mat[11] = v;
         }
     };
 
@@ -176,30 +175,28 @@ function Generic(x, y, z) {
             cz = c(z),
             sz = s(z);
 
-        var r = mat3xmat3([ cy*cz, sx*sy*cz-cx*sz, cx*sy*cz+sx*sz,
-                cy*sz, sx*sy*sz+cx*cz, cx*sy*sz-sx*cz,
-                -sy,          sx*cy,          cx*cy ], mat4tomat3(this.tmat));
-        this.tmat = [
-                r[0], r[1], r[2],  this.tmat[3],
-                r[3], r[4], r[5],  this.tmat[7],
-                r[6], r[7], r[8], this.tmat[11],
-                   0,    0,    0,             1
-        ];
+        var t = new Mat3(this.tmat);
+        var r = new Mat3([cy*cz, sx*sy*cz-cx*sz, cx*sy*cz+sx*sz,
+                          cy*sz, sx*sy*sz+cx*cz, cx*sy*sz-sx*cz,
+                            -sy,          sx*cy,          cx*cy]);
+        r = r.mult(t).mat;
+        this.tmat.mat = [r[0], r[1], r[2],  this.tmat.mat[3],
+                         r[3], r[4], r[5],  this.tmat.mat[7],
+                         r[6], r[7], r[8], this.tmat.mat[11],
+                            0,    0,    0,                  1];
 
         return this;
     };
     this.resetRotation = function() {
-        this.tmat = [
-                1,0,0,this.tmat[3],
-                0,1,0,this.tmat[7],
-                0,0,1,this.tmat[11],
-                0,0,0,1
-        ];
+        this.tmat.mat = [1, 0, 0, this.tmat.mat[3],
+                         0, 1, 0, this.tmat.mat[7],
+                         0, 0, 1, this.tmat.mat[11],
+                         0, 0, 0, 1];
         return this;
     };
     this.move = function(x, y, z) {
-        var r = this.tmat;
-        this.tmat = [
+        var r = this.tmat.mat;
+        this.tmat.mat = [
             r[0], r[1], r[2], x*r[0]+y*r[1]+z*r[2]+r[3],
             r[4], r[5], r[6], x*r[4]+y*r[5]+z*r[6]+r[7],
             r[8], r[9], r[10], x*r[8]+y*r[9]+z*r[10]+r[11],
@@ -209,21 +206,6 @@ function Generic(x, y, z) {
     };
 }
 
-/*function Camera(x, y, z) { // camera needs its own special move function for some reason .-.
-    Generic.call(this, x, y, z);
-
-    this.move = function(x, y, z) {
-        var m = this.tmat;
-        var r = mat3inverse(mat4tomat3(m));
-        this.tmat = [
-            r[0], r[3], r[6], x*r[0]+y*r[1]+z*r[2]+m[3],
-            r[1], r[4], r[7], x*r[3]+y*r[4]+z*r[5]+m[7],
-            r[2], r[5], r[8], x*r[6]+y*r[7]+z*r[8]+m[11],
-            m[12], m[13], m[14], m[15]
-        ];
-        return this;
-    };
-}*/
 function Camera(x, y, z) {
     if (typeof x == "undefined") x = 0;
     if (typeof y == "undefined") y = 0;
@@ -247,9 +229,9 @@ function Cube(x, y, z, r, g, b, a, sx, sy, sz) {
 
     Generic.call(this, x, y, z);
 
-    this.tmat[0] = sx;
-    this.tmat[5] = sy;
-    this.tmat[10] = sz;
+    this.tmat.mat[0] = sx;
+    this.tmat.mat[5] = sy;
+    this.tmat.mat[10] = sz;
 
     this.color = {
         r: r,
@@ -294,39 +276,4 @@ function mat3inverse(m) { // kinda copied off wikipedia
         I = a*e-b*d,
         s = 1/(a*A+b*B+c*C); // s for scalar :P
     return [s*A,s*D,s*G,s*B,s*E,s*H,s*C,s*F,s*I];
-}
-
-// HARD CODING FTW
-
-function mat4transpose(m) {
-    return [
-        m[0], m[4], m[8], m[12],
-        m[1], m[5], m[9], m[13],
-        m[2], m[6], m[10], m[14],
-        m[3], m[7], m[11], m[15]
-    ];
-}
-
-function mat3transpose(m) {
-    return [
-        m[0], m[3], m[6],
-        m[1], m[4], m[7],
-        m[2], m[5], m[8]
-    ];
-}
-
-function mat4tomat3(m) {
-    return [
-        m[0], m[1], m[2],
-        m[4], m[5], m[6],
-        m[8], m[9], m[10]
-    ];
-}
-
-function mat3xmat3(a, b) {
-    return [a[0]*b[0]+a[1]*b[3]+a[2]*b[6],a[0]*b[1]+a[1]*b[4]+a[2]*b[7],a[0]*b[2]+a[1]*b[5]+a[2]*b[8],a[3]*b[0]+a[4]*b[3]+a[5]*b[6],a[3]*b[1]+a[4]*b[4]+a[5]*b[7],a[3]*b[2]+a[4]*b[5]+a[5]*b[8],a[6]*b[0]+a[7]*b[3]+a[8]*b[6],a[6]*b[1]+a[7]*b[4]+a[8]*b[7],a[6]*b[2]+a[7]*b[5]+a[8]*b[8]];
-}
-
-function mat4xmat4(a, b) {
-    return [a[0]*b[0]+a[1]*b[4]+a[2]*b[8]+a[3]*b[12],a[0]*b[1]+a[1]*b[5]+a[2]*b[9]+a[3]*b[13],a[0]*b[2]+a[1]*b[6]+a[2]*b[10]+a[3]*b[14],a[0]*b[3]+a[1]*b[7]+a[2]*b[11]+a[3]*b[15],a[4]*b[0]+a[5]*b[4]+a[6]*b[8]+a[7]*b[12],a[4]*b[1]+a[5]*b[5]+a[6]*b[9]+a[7]*b[13],a[4]*b[2]+a[5]*b[6]+a[6]*b[10]+a[7]*b[14],a[4]*b[3]+a[5]*b[7]+a[6]*b[11]+a[7]*b[15],a[8]*b[0]+a[9]*b[4]+a[10]*b[8]+a[11]*b[12],a[8]*b[1]+a[9]*b[5]+a[10]*b[9]+a[11]*b[13],a[8]*b[2]+a[9]*b[6]+a[10]*b[10]+a[11]*b[14],a[8]*b[3]+a[9]*b[7]+a[10]*b[11]+a[11]*b[15],a[12]*b[0]+a[13]*b[4]+a[14]*b[8]+a[15]*b[12],a[12]*b[1]+a[13]*b[5]+a[14]*b[9]+a[15]*b[13],a[12]*b[2]+a[13]*b[6]+a[14]*b[10]+a[15]*b[14],a[12]*b[3]+a[13]*b[7]+a[14]*b[11]+a[15]*b[15]];
 }
