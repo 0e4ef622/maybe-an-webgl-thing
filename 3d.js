@@ -138,9 +138,9 @@ function lookAt(pos, dir, up) {
     //x = x.neg();
 
     return (new Mat4([
-          x.x,   x.y,   x.z, pos.x,
-          y.x,   y.y,   y.z, pos.y,
-        dir.x, dir.y, dir.z, pos.z,
+          x.x,   y.x, dir.x, pos.x,
+          x.y,   y.y, dir.y, pos.y,
+          x.z,   y.z, dir.z, pos.z,
             0,     0,     0,     1
     ]));
 }
