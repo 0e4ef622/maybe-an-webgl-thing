@@ -135,11 +135,11 @@ window.addEventListener("load", function(){
         return;
     }
 
-    var wglDepthTxtrExtension = gl.getExtension("WEBGL_depth_texture") || gl.getExtension("WEBKIT_WEBGL_depth_texture") || gl.getExtension("MOZ_WEBGL_depth_texture");
+    /*var wglDepthTxtrExtension = gl.getExtension("WEBGL_depth_texture") || gl.getExtension("WEBKIT_WEBGL_depth_texture") || gl.getExtension("MOZ_WEBGL_depth_texture");
     if (!wglDepthTxtrExtension) {
         alert("Your browser does not support the WEBGL_depth_texture extension :(");
         return;
-    }
+    }*/
 
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
