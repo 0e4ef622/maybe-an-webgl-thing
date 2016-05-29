@@ -88,7 +88,9 @@ var world = new World();
             yaw += (prevTouch.x - e.touches[0].pageX)/300;
             pitch += (prevTouch.y - e.touches[0].pageY)/300;
 
-            world.camera.resetRotation().rotate(0, yaw, 0).rotate(pitch, 0, 0);
+            world.camera.dir.x = Math.cos(pitch) * Math.cos(yaw);
+            world.camera.dir.y = Math.sin(pitch);
+            world.camera.dir.z = Math.cos(pitch) * Math.sin(yaw);;
 
             prevTouch.x = e.touches[0].pageX;
             prevTouch.y = e.touches[0].pageY;

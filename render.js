@@ -191,14 +191,14 @@ window.addEventListener("load", function(){
 
     var frames = 0;
     function render() {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
+        /*gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
           gl.clear(gl.DEPTH_BUFFER_BIT);
           gl.viewport(0, 0, shadowResolution[0], shadowResolution[1]);
           gl.colorMask(0, 0, 0, 0);
           /*gl.uniformMatrix4fv(depthMapCmatLoc, false, new Float32Array([
                       uh
-          ]));*/
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          ]));
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);*/
 
         gl.viewport(0, 0, cnv.width, cnv.height);
         gl.colorMask(1, 1, 1, 1);
@@ -226,7 +226,7 @@ window.addEventListener("load", function(){
                 0, 0, 0, 1]);
         var cmat = lookat.mult(p).transpose().mat;
         gl.uniformMatrix4fv(cmatLoc, false, new Float32Array(cmat));
-        gl.uniform3f(camPosLoc, p.x, p.y, p.z);
+        gl.uniform3f(camPosLoc, world.camera.pos.x, world.camera.pos.y, world.camera.pos.z);
         gl.uniform3f(lightDirLoc, world.lighting.lightDir.x, world.lighting.lightDir.y, world.lighting.lightDir.z);
         gl.uniform3f(ambientLoc, world.lighting.ambient.r/255, world.lighting.ambient.g/255, world.lighting.ambient.b/255);
 
