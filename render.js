@@ -160,14 +160,24 @@ window.addEventListener("load", function(){
             "return acc;"+
         "}"+
 
-        "const lowp float bias = .0001;"+
+        (!wglDepthTxtrExtension ?
+         "mediump float unpack_depth(mediump vec4 rgba_depth) {"+
+             "return dot(rgba_depth, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/160581375.0));"+
+         "}"
+         : "")+
+
+        "const mediump float bias = .0001;"+
         "lowp float shadow(mediump vec4 light_pos) {"+
             "mediump vec3 proj_coords = light_pos.xyz / light_pos.w;"+
             "proj_coords = 0.5 + proj_coords * 0.5;"+
             "if (proj_coords.x > 0.0 && proj_coords.x < 1.0 && proj_coords.y > 0.0 && proj_coords.y < 1.0 && proj_coords.z > 0.0 && proj_coords.z < (1.0 - bias*10.0)) {"+
-                "mediump float closest_depth = texture2D(shadow_map, proj_coords.xy).r;"+
+                (!wglDepthTxtrExtension ?
+                 "mediump float closest_depth = unpack_depth(texture2D(shadow_map, proj_coords.xy));"
+                 :
+                 "mediump float closest_depth = texture2D(shadow_map, proj_coords.xy).r;")+
                 "mediump float current_depth = proj_coords.z;"+
-                "return 1.0 - smoothstep(bias, .002, current_depth - closest_depth);"+
+                //"return 1.0 - smoothstep(bias, .002, current_depth - closest_depth);"+
+                "return current_depth - bias > closest_depth ? 0.0 : 1.0;"+
             "} else {"+
                 "return 1.0;"+
             "}"+
@@ -178,24 +188,30 @@ window.addEventListener("load", function(){
             "lowp float spec = pow64(max(dot(cam_dir, reflect_dir), 0.0));"+
             "lowp vec3 specular = spec * vec3(.5, .5, .5);"+
             "gl_FragColor = vec4(ambient + shadow(light_pos) * (diffuse + specular), 1) * color;"+
-            //"lowp vec2 uh = vec2(gl_FragCoord.x/640.0, gl_FragCoord.y/480.0);"+
-            //"gl_FragColor = texture2D(shadow_map, uh);"+
         "}";
     var depthMapVtxSrc =
         "attribute vec3 pos;"+
         "uniform mat4 lightSpaceMatrix;"+
         "uniform mat4 tmat;"+
-        (wglDepthTxtrExtension ? "varying lowp float depth;" : "")+
+        (!wglDepthTxtrExtension ? "varying mediump float depth;" : "")+
 
         "void main() {"+
             "vec4 p = lightSpaceMatrix * tmat * vec4(pos, 1.0);"+
-            (wglDepthTxtrExtension ? "depth = p.z*.5+.5;" : "")+
+            (!wglDepthTxtrExtension ? "depth = p.z*.5+.5;" : "")+
             "gl_Position = p;"+
         "}";
     var depthMapFragSrc =
-        (wglDepthTxtrExtension ? "varying lowp float depth;" : "")+
-        "void main(){"+
-            (wglDepthTxtrExtension ? "gl_FragColor = vec4(depth, 0, 0, 1.0);" : "")+
+        (!wglDepthTxtrExtension ? "varying mediump float depth;"+
+
+        "mediump vec4 pack_depth(mediump float depth) {"+
+            "mediump vec4 enc = vec4(1.0, 255.0, 65025.0, 160581375.0) * depth;"+
+            "enc = fract(enc);"+
+            "enc -= enc.yzww * vec4(1.0/255.0, 1.0/255.0, 1.0/255.0, 0.0);"+
+            "return enc;"+
+        "}" : "")+
+
+        "void main() {"+
+            (!wglDepthTxtrExtension ? "gl_FragColor = pack_depth(depth);" : "")+
         "}";
 
     gl.enable(gl.DEPTH_TEST);
@@ -267,9 +283,9 @@ window.addEventListener("load", function(){
         gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
 
           gl.useProgram(depthMapPrgm);
-          gl.clear(gl.DEPTH_BUFFER_BIT);
+          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
           gl.viewport(0, 0, shadowResolution[0], shadowResolution[1]);
-          gl.colorMask(0, 0, 0, 0);
+          //!wglDepthTxtrExtension && gl.colorMask(0, 0, 0, 0);
           gl.uniformMatrix4fv(depthMapLSMLoc, false, lightSpaceMatrix);
 
           drawWorldDepthMap(gl, world);
