@@ -1,4 +1,3 @@
-// TODO shadows
 window.addEventListener("load", function(){
 
     var cube = {};
