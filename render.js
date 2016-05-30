@@ -113,10 +113,9 @@ window.addEventListener("load", function(){
 
     var wglDepthTxtrExtension = gl.getExtension("WEBGL_depth_texture") || gl.getExtension("WEBKIT_WEBGL_depth_texture") || gl.getExtension("MOZ_WEBGL_depth_texture");
 
-    if (!wglDepthTxtrExtension) { // this is temporary
-        alert("Your browser does not support the WEBGL_depth_texture extension :(");
-        return;
-    } else console.log("yay depth textures!");
+    if (!wglDepthTxtrExtension) // this is temporary
+        console.log("aww no depth textures :(");
+    else console.log("yay depth textures!");
 
     var vtxSrc =
         "attribute vec3 pos;"+
@@ -186,17 +185,17 @@ window.addEventListener("load", function(){
         "attribute vec3 pos;"+
         "uniform mat4 lightSpaceMatrix;"+
         "uniform mat4 tmat;"+
-        //"varying lowp float thing;"+
+        (wglDepthTxtrExtension ? "varying lowp float depth;" : "")+
 
         "void main() {"+
-            "vec4 t = lightSpaceMatrix * tmat * vec4(pos, 1.0);"+
-            //"thing = t.z*.5+.5;"+
-            "gl_Position = t;"+
+            "vec4 p = lightSpaceMatrix * tmat * vec4(pos, 1.0);"+
+            (wglDepthTxtrExtension ? "depth = p.z*.5+.5;" : "")+
+            "gl_Position = p;"+
         "}";
     var depthMapFragSrc =
-        //"varying lowp float thing;"+
+        (wglDepthTxtrExtension ? "varying lowp float depth;" : "")+
         "void main(){"+
-            //"gl_FragColor = vec4(thing, thing, thing, 1.0);"+
+            (wglDepthTxtrExtension ? "gl_FragColor = vec4(depth, 0, 0, 1.0);" : "")+
         "}";
 
     gl.enable(gl.DEPTH_TEST);
@@ -227,18 +226,25 @@ window.addEventListener("load", function(){
         depthMapColorBuffer = gl.createRenderbuffer();
 
     gl.bindTexture(gl.TEXTURE_2D, depthMap);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, shadowResolution[0], shadowResolution[1], 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+    var texComponent = wglDepthTxtrExtension ? gl.DEPTH_COMPONENT : gl.RGBA;
+    var format = wglDepthTxtrExtension ? gl.UNSIGNED_SHORT : gl.UNSIGNED_BYTE;
+    gl.texImage2D(gl.TEXTURE_2D, 0, texComponent, shadowResolution[0], shadowResolution[1], 0, texComponent, format, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
     gl.bindRenderbuffer(gl.RENDERBUFFER, depthMapColorBuffer);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA4, shadowResolution[0], shadowResolution[1]);
+    gl.renderbufferStorage(gl.RENDERBUFFER, wglDepthTxtrExtension ? gl.RGBA4 : gl.DEPTH_COMPONENT16, shadowResolution[0], shadowResolution[1]);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthMap, 0);
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, depthMapColorBuffer);
+    if (wglDepthTxtrExtension) {
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthMap, 0);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, depthMapColorBuffer);
+    } else {
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depthMap, 0);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthMapColorBuffer);
+    }
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     var tmatLoc = gl.getUniformLocation(prgm, "tmat"),
