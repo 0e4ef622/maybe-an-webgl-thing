@@ -24,25 +24,44 @@ function Generic(x, y, z) {
     ]);
 
     var t = this;
-    this.pos = {
-        get x() {
-            return t.tmat.mat[3];
+
+    Object.defineProperty(t, "pos", { // keep the position and tmat in sync
+        get: function() {
+            var v = new Vec3();
+            Object.defineProperties(v, {
+                x: {
+                    get: function() {
+                        return t.tmat.mat[3];
+                    },
+                    set: function(v) {
+                        t.tmat.mat[3] = v;
+                    }
+                },
+                y: {
+                    get: function() {
+                        return t.tmat.mat[7];
+                    },
+                    set: function(v) {
+                        t.tmat.mat[7] = v;
+                    }
+                },
+                z: {
+                    get: function() {
+                        return t.tmat.mat[11];
+                    },
+                    set: function(v) {
+                        t.tmat.mat[11] = v;
+                    }
+                }
+            });
+            return v;
         },
-        set x(v) {
-            t.tmat.mat[3] = v; },
-        get y() {
-            return t.tmat.mat[7];
-        },
-        set y(v) {
-            t.tmat.mat[7] = v;
-        },
-        get z() {
-            return t.tmat.mat[11];
-        },
-        set z(v) {
-            t.tmat.mat[11] = v;
+        set: function(v) {
+            t.tmat.mat[3] = v.x;
+            t.tmat.mat[7] = v.y;
+            t.tmat.mat[11] = v.z;
         }
-    };
+    });
 }
 Generic.prototype.rotate = function(x, y, z) { // radians
     var c = Math.cos,
@@ -83,6 +102,22 @@ Generic.prototype.move = function(x, y, z) {
     ];
     return this;
 };
+
+Generic.prototype.lookAt = function(pos) {
+    var up = new Vec3(0, 1, 0);
+    var dir = pos.subtract(this.pos).norm();
+    var x = up.cross(dir).norm();
+    var y = dir.cross(x);
+
+    this.tmat = new Mat4([
+                x.x,   y.x, dir.x, this.pos.x,
+                x.y,   y.y, dir.y, this.pos.y,
+                x.z,   y.z, dir.z, this.pos.z,
+                0,     0,     0,     1
+    ]);
+    return this;
+};
+
 
 function Camera(x, y, z) {
     if (typeof x == "undefined") x = 0;
@@ -126,21 +161,7 @@ function Cube(x, y, z, r, g, b, a, sx, sy, sz) {
         b: b,
         a: a
     };
+
 }
 
 Cube.prototype = Object.create(Generic.prototype);
-
-function lookAt(pos, dir, up) {
-    if (typeof up == "undefined") up = new Vec3(0, 1, 0);
-    dir = dir.neg();
-    var x = up.cross(dir).norm();
-    var y = dir.cross(x);
-    //x = x.neg();
-
-    return (new Mat4([
-          x.x,   y.x, dir.x, pos.x,
-          x.y,   y.y, dir.y, pos.y,
-          x.z,   y.z, dir.z, pos.z,
-            0,     0,     0,     1
-    ]));
-}

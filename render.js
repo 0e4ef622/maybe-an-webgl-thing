@@ -104,7 +104,7 @@ window.addEventListener("load", function(){
     var cnv = document.getElementById("cnv");
     cnv.width = width;
     cnv.height = height;
-    var gl = cnv.getContext("webgl") || cnv.getContext("webgl-experimental");
+    gl = cnv.getContext("webgl") || cnv.getContext("webgl-experimental");
 
     if (!gl) {
         alert("Your browser does not support WebGL");
