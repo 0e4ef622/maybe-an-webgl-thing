@@ -165,7 +165,7 @@ window.addEventListener("load", function(){
          "}"
          : "")+
 
-        "const mediump float bias = .0001;"+
+        "const mediump float bias = .001;"+
         "lowp float shadow(mediump vec4 light_pos) {"+
             "mediump vec3 proj_coords = light_pos.xyz / light_pos.w;"+
             "proj_coords = 0.5 + proj_coords * 0.5;"+
@@ -227,10 +227,11 @@ window.addEventListener("load", function(){
     gl.bufferData(gl.ARRAY_BUFFER, cube.vertices, gl.STATIC_DRAW);
     gl.vertexAttribPointer(gl.getAttribLocation(prgm, "pos"), 3, gl.FLOAT, false, 24, 0);
     gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "pos"));
-    gl.vertexAttribPointer(gl.getAttribLocation(depthMapPrgm, "pos"), 3, gl.FLOAT, false, 24, 0);
-    gl.enableVertexAttribArray(gl.getAttribLocation(depthMapPrgm, "pos"));
     gl.vertexAttribPointer(gl.getAttribLocation(prgm, "norm"), 3, gl.FLOAT, false, 24, 12);
     gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "norm"));
+
+    gl.vertexAttribPointer(gl.getAttribLocation(depthMapPrgm, "pos"), 3, gl.FLOAT, false, 24, 0);
+    gl.enableVertexAttribArray(gl.getAttribLocation(depthMapPrgm, "pos"));
 
     var elemBuf = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elemBuf);
