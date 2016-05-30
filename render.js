@@ -167,7 +167,7 @@ window.addEventListener("load", function(){
             "if (proj_coords.x > 0.0 && proj_coords.x < 1.0 && proj_coords.y > 0.0 && proj_coords.y < 1.0 && proj_coords.z > 0.0 && proj_coords.z < 1.0) {"+
                 "mediump float closest_depth = texture2D(shadow_map, proj_coords.xy).r;"+
                 "mediump float current_depth = proj_coords.z;"+
-                "return current_depth > closest_depth ? 0.0 : 1.0;"+
+                "return current_depth - .0001 > closest_depth ? 0.0 : 1.0;"+
             "} else {"+
                 "return 1.0;"+
             "}"+

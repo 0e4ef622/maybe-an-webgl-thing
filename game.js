@@ -36,7 +36,7 @@ var world = new World();
     world.objects.push(new Cube(-6.5, 1.5, 26, 0, 150, 0, 255, 2, 1, 1));
     world.objects.push(new Cube(-6, -.5, 26, 0, 150, 0, 255));
     // teh graund
-    world.objects.push(new Cube(0, -3, 0, 160, 160, 160, 255, 200, 1, 200));
+    world.objects.push(new Cube(0, -2.5, 0, 160, 160, 160, 255, 200, 1, 200));
 
     world.camera.pos.z = 13;
 
