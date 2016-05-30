@@ -69,9 +69,9 @@ window.addEventListener("load", function(){
 
     var lightSpaceMatrix = (function() { // column major order
         var minDepth = n = .1,
-            maxDepth = f = 50,
-            r = 50,
-            t = 50;
+            maxDepth = f = 35,
+            r = 11,
+            t = 20;
         var depthPmat = new Mat4([
                 1/r, 0, 0, 0,
                 0, 1/t, 0, 0,
@@ -80,7 +80,7 @@ window.addEventListener("load", function(){
 
         var depthCmat = (function() {
             var d = world.lighting.lightDir.neg();
-            var p = d.mult(25);
+            var p = d.mult(25).add(new Vec3(3, -5, 5));
             var up = new Vec3(0, 1, 0);
             var right = up.cross(d).norm();
             up = d.cross(right);
@@ -161,13 +161,14 @@ window.addEventListener("load", function(){
             "return acc;"+
         "}"+
 
+        "const lowp float bias = .0001;"+
         "lowp float shadow(mediump vec4 light_pos) {"+
             "mediump vec3 proj_coords = light_pos.xyz / light_pos.w;"+
             "proj_coords = 0.5 + proj_coords * 0.5;"+
-            "if (proj_coords.x > 0.0 && proj_coords.x < 1.0 && proj_coords.y > 0.0 && proj_coords.y < 1.0 && proj_coords.z > 0.0 && proj_coords.z < 1.0) {"+
+            "if (proj_coords.x > 0.0 && proj_coords.x < 1.0 && proj_coords.y > 0.0 && proj_coords.y < 1.0 && proj_coords.z > 0.0 && proj_coords.z < (1.0 - bias*10.0)) {"+
                 "mediump float closest_depth = texture2D(shadow_map, proj_coords.xy).r;"+
                 "mediump float current_depth = proj_coords.z;"+
-                "return current_depth - .0001 > closest_depth ? 0.0 : 1.0;"+
+                "return 1.0 - smoothstep(bias, .002, current_depth - closest_depth);"+
             "} else {"+
                 "return 1.0;"+
             "}"+
@@ -282,7 +283,7 @@ window.addEventListener("load", function(){
         gl.uniformMatrix4fv(pmatLoc, false, pmat);
         gl.uniformMatrix4fv(LSMLoc, false, lightSpaceMatrix);
 
-        /* obscure code that i probably by now forgot how it works */
+        // obscure code that i probably by now forgot how it works
         var d = world.camera.dir;
         var p = world.camera.pos;
         var up = new Vec3(0, 1, 0);
