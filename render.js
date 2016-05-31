@@ -2,36 +2,36 @@ window.addEventListener("load", function(){
 
     var cube = {};
     cube.vertices = new Float32Array([
-            // front face    normal vector
-            .5, -.5, -.5,       0,  0, -1,
-            .5,  .5, -.5,       0,  0, -1,
-           -.5,  .5, -.5,       0,  0, -1,
-           -.5, -.5, -.5,       0,  0, -1,
+            // front face    normal vector     texture mapping
+            .5, -.5, -.5,       0,  0, -1,     1, 0,
+            .5,  .5, -.5,       0,  0, -1,     1, 1,
+           -.5,  .5, -.5,       0,  0, -1,     0, 1,
+           -.5, -.5, -.5,       0,  0, -1,     0, 0,
             // back face
-           -.5, -.5,  .5,       0,  0,  1,
-           -.5,  .5,  .5,       0,  0,  1,
-            .5,  .5,  .5,       0,  0,  1,
-            .5, -.5,  .5,       0,  0,  1,
+           -.5, -.5,  .5,       0,  0,  1,     1, 0,
+           -.5,  .5,  .5,       0,  0,  1,     1, 1,
+            .5,  .5,  .5,       0,  0,  1,     0, 1,
+            .5, -.5,  .5,       0,  0,  1,     0, 0,
             // left face
-           -.5, -.5, -.5,      -1,  0,  0,
-           -.5,  .5, -.5,      -1,  0,  0,
-           -.5,  .5,  .5,      -1,  0,  0,
-           -.5, -.5,  .5,      -1,  0,  0,
+           -.5, -.5, -.5,      -1,  0,  0,     1, 0,
+           -.5,  .5, -.5,      -1,  0,  0,     1, 1,
+           -.5,  .5,  .5,      -1,  0,  0,     0, 1,
+           -.5, -.5,  .5,      -1,  0,  0,     0, 0,
             // right face
-            .5, -.5,  .5,       1,  0,  0,
-            .5,  .5,  .5,       1,  0,  0,
-            .5,  .5, -.5,       1,  0,  0,
-            .5, -.5, -.5,       1,  0,  0,
+            .5, -.5,  .5,       1,  0,  0,     1, 0,
+            .5,  .5,  .5,       1,  0,  0,     1, 1,
+            .5,  .5, -.5,       1,  0,  0,     0, 1,
+            .5, -.5, -.5,       1,  0,  0,     0, 0,
             // top face
-            .5,  .5, -.5,       0,  1,  0,
-            .5,  .5,  .5,       0,  1,  0,
-           -.5,  .5,  .5,       0,  1,  0,
-           -.5,  .5, -.5,       0,  1,  0,
+            .5,  .5, -.5,       0,  1,  0,     1, 0,
+            .5,  .5,  .5,       0,  1,  0,     1, 1,
+           -.5,  .5,  .5,       0,  1,  0,     0, 1,
+           -.5,  .5, -.5,       0,  1,  0,     0, 0,
             // bottom face
-            .5, -.5,  .5,       0, -1,  0,
-            .5, -.5, -.5,       0, -1,  0,
-           -.5, -.5, -.5,       0, -1,  0,
-           -.5, -.5,  .5,       0, -1,  0
+            .5, -.5,  .5,       0, -1,  0,     1, 0,
+            .5, -.5, -.5,       0, -1,  0,     1, 1,
+           -.5, -.5, -.5,       0, -1,  0,     0, 1,
+           -.5, -.5,  .5,       0, -1,  0,     0, 0
     ]);
     cube.indices = new Uint8Array([
              0,  1,  2, // front face
@@ -119,6 +119,7 @@ window.addEventListener("load", function(){
     var vtxSrc =
         "attribute vec3 pos;"+
         "attribute vec3 norm;"+
+        "attribute vec2 texture_coord;"+
         "uniform vec3 light_dir;"+
         "uniform mat4 tmat;"+
         "uniform mat4 cmat;"+
@@ -129,6 +130,7 @@ window.addEventListener("load", function(){
         "varying mediump vec3 reflect_dir;"+
         "varying mediump vec3 frag_pos;"+
         "varying mediump vec4 light_pos;"+
+        "varying vec2 uv_texture;"+
 
         "void main() {"+
             "gl_Position = pmat * cmat * tmat * vec4(pos, 1.0);"+
@@ -138,18 +140,21 @@ window.addEventListener("load", function(){
             "frag_pos = vec3(tmat * vec4(pos, 1.0));"+
 
             "light_pos = lightSpaceMatrix * tmat * vec4(pos, 1.0);"+
+            "uv_texture = texture_coord;"+
         "}";
     var fragSrc =
         "varying lowp vec3 diffuse;"+
         "uniform lowp vec3 ambient;"+
         "varying mediump vec3 reflect_dir;"+
         "varying mediump vec3 frag_pos;"+
+        "varying mediump vec2 uv_texture;"+
         "varying mediump vec4 light_pos;"+
         "uniform lowp vec4 color;"+
         "uniform highp mat4 cmat;"+
         "uniform mediump vec3 cam_pos;"+
 
         "uniform sampler2D shadow_map;"+
+        "uniform sampler2D cube_texture;"+
 
         "lowp float pow64(mediump float b) {"+
             "mediump float acc = 1.0;"+
@@ -186,7 +191,7 @@ window.addEventListener("load", function(){
             "mediump vec3 cam_dir = normalize(cam_pos - frag_pos);"+
             "lowp float spec = pow64(max(dot(cam_dir, reflect_dir), 0.0));"+
             "lowp vec3 specular = spec * vec3(.5, .5, .5);"+
-            "gl_FragColor = vec4(ambient + shadow(light_pos) * (diffuse + specular), 1) * color;"+
+            "gl_FragColor = vec4(ambient + shadow(light_pos) * (diffuse + specular), 1) * texture2D(cube_texture, uv_texture);;"+
         "}";
     var depthMapVtxSrc =
         "attribute vec3 pos;"+
@@ -225,10 +230,12 @@ window.addEventListener("load", function(){
     var buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, cube.vertices, gl.STATIC_DRAW);
-    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "pos"), 3, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "pos"), 3, gl.FLOAT, false, 32, 0);
     gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "pos"));
-    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "norm"), 3, gl.FLOAT, false, 24, 12);
+    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "norm"), 3, gl.FLOAT, false, 32, 12);
     gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "norm"));
+    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "texture_coord"), 2, gl.FLOAT, false, 32, 24);
+    gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "texture_coord"));
 
     gl.vertexAttribPointer(gl.getAttribLocation(depthMapPrgm, "pos"), 3, gl.FLOAT, false, 24, 0);
     gl.enableVertexAttribArray(gl.getAttribLocation(depthMapPrgm, "pos"));
