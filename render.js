@@ -2,36 +2,36 @@ window.addEventListener("load", function(){
 
     var cube = {};
     cube.vertices = new Float32Array([
-            // front face    normal vector     texture mapping
-            .5, -.5, -.5,       0,  0, -1,     1, 0,
-            .5,  .5, -.5,       0,  0, -1,     1, 1,
-           -.5,  .5, -.5,       0,  0, -1,     0, 1,
-           -.5, -.5, -.5,       0,  0, -1,     0, 0,
+            // front face    normal vector     texture mapping  face number
+            .5, -.5, -.5,       0,  0, -1,     1, 1,           0,
+            .5,  .5, -.5,       0,  0, -1,     1, 0,           0,
+           -.5,  .5, -.5,       0,  0, -1,     0, 0,           0,
+           -.5, -.5, -.5,       0,  0, -1,     0, 1,           0,
             // back face
-           -.5, -.5,  .5,       0,  0,  1,     1, 0,
-           -.5,  .5,  .5,       0,  0,  1,     1, 1,
-            .5,  .5,  .5,       0,  0,  1,     0, 1,
-            .5, -.5,  .5,       0,  0,  1,     0, 0,
+           -.5, -.5,  .5,       0,  0,  1,     1, 1,           1,
+           -.5,  .5,  .5,       0,  0,  1,     1, 0,           1,
+            .5,  .5,  .5,       0,  0,  1,     0, 0,           1,
+            .5, -.5,  .5,       0,  0,  1,     0, 1,           1,
             // left face
-           -.5, -.5, -.5,      -1,  0,  0,     1, 0,
-           -.5,  .5, -.5,      -1,  0,  0,     1, 1,
-           -.5,  .5,  .5,      -1,  0,  0,     0, 1,
-           -.5, -.5,  .5,      -1,  0,  0,     0, 0,
+           -.5, -.5, -.5,      -1,  0,  0,     1, 1,           2,
+           -.5,  .5, -.5,      -1,  0,  0,     1, 0,           2,
+           -.5,  .5,  .5,      -1,  0,  0,     0, 0,           2,
+           -.5, -.5,  .5,      -1,  0,  0,     0, 1,           2,
             // right face
-            .5, -.5,  .5,       1,  0,  0,     1, 0,
-            .5,  .5,  .5,       1,  0,  0,     1, 1,
-            .5,  .5, -.5,       1,  0,  0,     0, 1,
-            .5, -.5, -.5,       1,  0,  0,     0, 0,
+            .5, -.5,  .5,       1,  0,  0,     1, 1,           3,
+            .5,  .5,  .5,       1,  0,  0,     1, 0,           3,
+            .5,  .5, -.5,       1,  0,  0,     0, 0,           3,
+            .5, -.5, -.5,       1,  0,  0,     0, 1,           3,
             // top face
-            .5,  .5, -.5,       0,  1,  0,     1, 0,
-            .5,  .5,  .5,       0,  1,  0,     1, 1,
-           -.5,  .5,  .5,       0,  1,  0,     0, 1,
-           -.5,  .5, -.5,       0,  1,  0,     0, 0,
+            .5,  .5, -.5,       0,  1,  0,     1, 1,           4,
+            .5,  .5,  .5,       0,  1,  0,     1, 0,           4,
+           -.5,  .5,  .5,       0,  1,  0,     0, 0,           4,
+           -.5,  .5, -.5,       0,  1,  0,     0, 1,           4,
             // bottom face
-            .5, -.5,  .5,       0, -1,  0,     1, 0,
-            .5, -.5, -.5,       0, -1,  0,     1, 1,
-           -.5, -.5, -.5,       0, -1,  0,     0, 1,
-           -.5, -.5,  .5,       0, -1,  0,     0, 0
+            .5, -.5,  .5,       0, -1,  0,     1, 1,           5,
+            .5, -.5, -.5,       0, -1,  0,     1, 0,           5,
+           -.5, -.5, -.5,       0, -1,  0,     0, 0,           5,
+           -.5, -.5,  .5,       0, -1,  0,     0, 1,           5
     ]);
     cube.indices = new Uint8Array([
              0,  1,  2, // front face
@@ -120,6 +120,7 @@ window.addEventListener("load", function(){
         "attribute vec3 pos;"+
         "attribute vec3 norm;"+
         "attribute vec2 texture_coord;"+
+        "attribute float in_face;"+
         "uniform vec3 light_dir;"+
         "uniform mat4 tmat;"+
         "uniform mat4 cmat;"+
@@ -131,6 +132,7 @@ window.addEventListener("load", function(){
         "varying mediump vec3 frag_pos;"+
         "varying mediump vec4 light_pos;"+
         "varying vec2 uv_texture;"+
+        "varying float face;"+
 
         "void main() {"+
             "gl_Position = pmat * cmat * tmat * vec4(pos, 1.0);"+
@@ -141,20 +143,33 @@ window.addEventListener("load", function(){
 
             "light_pos = lightSpaceMatrix * tmat * vec4(pos, 1.0);"+
             "uv_texture = texture_coord;"+
+            "face = in_face;"+
         "}";
     var fragSrc =
-        "varying lowp vec3 diffuse;"+
-        "uniform lowp vec3 ambient;"+
         "varying mediump vec3 reflect_dir;"+
         "varying mediump vec3 frag_pos;"+
         "varying mediump vec2 uv_texture;"+
         "varying mediump vec4 light_pos;"+
+        "varying mediump float face;"+
+        "varying lowp vec3 diffuse;"+
+        "uniform lowp vec3 ambient;"+
         "uniform lowp vec4 color;"+
         "uniform highp mat4 cmat;"+
         "uniform mediump vec3 cam_pos;"+
 
         "uniform sampler2D shadow_map;"+
-        "uniform sampler2D cube_texture;"+
+        "uniform sampler2D cube_front;"+
+        "uniform sampler2D cube_back;"+
+        "uniform sampler2D cube_left;"+
+        "uniform sampler2D cube_right;"+
+        "uniform sampler2D cube_top;"+
+        "uniform sampler2D cube_bottom;"+
+        "uniform mediump vec2 cube_front_repeat;"+
+        "uniform mediump vec2 cube_back_repeat;"+
+        "uniform mediump vec2 cube_left_repeat;"+
+        "uniform mediump vec2 cube_right_repeat;"+
+        "uniform mediump vec2 cube_top_repeat;"+
+        "uniform mediump vec2 cube_bottom_repeat;"+
 
         "lowp float pow64(mediump float b) {"+
             "mediump float acc = 1.0;"+
@@ -191,7 +206,22 @@ window.addEventListener("load", function(){
             "mediump vec3 cam_dir = normalize(cam_pos - frag_pos);"+
             "lowp float spec = pow64(max(dot(cam_dir, reflect_dir), 0.0));"+
             "lowp vec3 specular = spec * vec3(.5, .5, .5);"+
-            "gl_FragColor = vec4(ambient + shadow(light_pos) * (diffuse + specular), 1) * texture2D(cube_texture, uv_texture);;"+
+
+            "lowp vec4 texColor;"+
+            "if (face == 0.0)"+
+                "texColor = texture2D(cube_front, uv_texture * cube_front_repeat);"+
+            "else if (face == 1.0)"+
+                "texColor = texture2D(cube_back, uv_texture * cube_back_repeat);"+
+            "else if (face == 2.0)"+
+                "texColor = texture2D(cube_left, uv_texture * cube_left_repeat);"+
+            "else if (face == 3.0)"+
+                "texColor = texture2D(cube_right, uv_texture * cube_right_repeat);"+
+            "else if (face == 4.0)"+
+                "texColor = texture2D(cube_top, uv_texture * cube_top_repeat);"+
+            "else if (face == 5.0)"+
+                "texColor = texture2D(cube_bottom, uv_texture * cube_bottom_repeat);"+
+
+            "gl_FragColor = vec4(ambient + shadow(light_pos) * (diffuse + specular), 1) * mix(color, texColor, texColor.a);"+
         "}";
     var depthMapVtxSrc =
         "attribute vec3 pos;"+
@@ -230,14 +260,16 @@ window.addEventListener("load", function(){
     var buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, cube.vertices, gl.STATIC_DRAW);
-    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "pos"), 3, gl.FLOAT, false, 32, 0);
+    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "pos"), 3, gl.FLOAT, false, 36, 0);
     gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "pos"));
-    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "norm"), 3, gl.FLOAT, false, 32, 12);
+    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "norm"), 3, gl.FLOAT, false, 36, 12);
     gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "norm"));
-    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "texture_coord"), 2, gl.FLOAT, false, 32, 24);
+    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "texture_coord"), 2, gl.FLOAT, false, 36, 24);
     gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "texture_coord"));
+    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "in_face"), 1, gl.FLOAT, false, 36, 32);
+    gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "in_face"));
 
-    gl.vertexAttribPointer(gl.getAttribLocation(depthMapPrgm, "pos"), 3, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(gl.getAttribLocation(depthMapPrgm, "pos"), 3, gl.FLOAT, false, 36, 0);
     gl.enableVertexAttribArray(gl.getAttribLocation(depthMapPrgm, "pos"));
 
     var elemBuf = gl.createBuffer();
@@ -280,10 +312,30 @@ window.addEventListener("load", function(){
         camPosLoc = gl.getUniformLocation(prgm, "cam_pos"),
         shadowMapLoc = gl.getUniformLocation(prgm, "shadow_map"),
         LSMLoc = gl.getUniformLocation(prgm, "lightSpaceMatrix"),
+        cubeTexLocs = [gl.getUniformLocation(prgm, "cube_front"),
+                       gl.getUniformLocation(prgm, "cube_back"),
+                       gl.getUniformLocation(prgm, "cube_left"),
+                       gl.getUniformLocation(prgm, "cube_right"),
+                       gl.getUniformLocation(prgm, "cube_top"),
+                       gl.getUniformLocation(prgm, "cube_bottom")],
+        cubeTexRepeatLocs = [gl.getUniformLocation(prgm, "cube_front_repeat"),
+                             gl.getUniformLocation(prgm, "cube_back_repeat"),
+                             gl.getUniformLocation(prgm, "cube_left_repeat"),
+                             gl.getUniformLocation(prgm, "cube_right_repeat"),
+                             gl.getUniformLocation(prgm, "cube_top_repeat"),
+                             gl.getUniformLocation(prgm, "cube_bottom_repeat")],
         depthMapTmatLoc = gl.getUniformLocation(depthMapPrgm, "tmat"),
         depthMapLSMLoc = gl.getUniformLocation(depthMapPrgm, "lightSpaceMatrix");
 
     window.requestAnimationFrame = (window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || function(f){setTimeout(f,10);});
+
+    var blankTexSrc = new ArrayBuffer(4);
+    var src = new Uint8Array(blankTexSrc);
+    var blankTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, blankTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 
     var frames = 0;
     function render() {
@@ -388,6 +440,18 @@ window.addEventListener("load", function(){
             gl.uniformMatrix3fv(nmatLoc, false, new Float32Array(nmat));
             gl.uniformMatrix4fv(tmatLoc, false, new Float32Array(obj.tmat.transpose().mat));
             gl.uniform4f(colorLoc, obj.color.r/255, obj.color.g/255, obj.color.b/255, obj.color.a/255);
+
+            var texUnits = [gl.TEXTURE1, gl.TEXTURE2, gl.TEXTURE3, gl.TEXTURE4, gl.TEXTURE5, gl.TEXTURE6];
+            for (var j = 0; j < texUnits.length; j++) {
+                gl.activeTexture(texUnits[j]);
+                if (obj.textures[j]) {
+                    gl.bindTexture(gl.TEXTURE_2D, obj.textures[j].gltexture);
+                    gl.uniform2fv(cubeTexRepeatLocs[j], obj.textures[j].repeat);
+                } else {
+                    gl.bindTexture(gl.TEXTURE_2D, blankTex);
+                }
+                gl.uniform1i(cubeTexLocs[j], j+1);
+            }
 
             gl.drawElements(gl.TRIANGLES, cube.indices.length, gl.UNSIGNED_BYTE, 0);
         }

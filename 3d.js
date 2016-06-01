@@ -137,6 +137,30 @@ Camera.prototype.move = function (x, y, z) {
     return this;
 }
 
+// source can be an ImageData, HTMLImageElement, HTMLCanvasElement, HTMLVideoElement, or
+// an ArrayBufferView, for which an wh and type must be given
+// such as gl.UNSIGNED_BYTE
+// image must be an power of 2
+function Texture(source, scale, wh, type) {
+    if (source.constructor === Texture) {
+        this.gltexture = source.gltexture;
+    } else {
+        this.gltexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.gltexture);
+        if (wh)
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, wh, wh, 0, gl.RGBA, type, source);
+        else
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+
+    this.repeat = [1, 1];
+}
+
 function Cube(x, y, z, r, g, b, a, sx, sy, sz) {
     x = typeof x == "undefined" ? 0 : x;
     y = typeof y == "undefined" ? 0 : y;
@@ -162,34 +186,40 @@ function Cube(x, y, z, r, g, b, a, sx, sy, sz) {
         a: a
     };
 
-    this.textures = {
-        top: null,
-        left: null,
-        right: null,
-        bottom: null,
-        front: null,
-        back: null
-    }
+    var tex = this.textures = [null, null, null, null, null, null];
+    Object.defineProperties(this.textures, {
+        front: {
+            set: function(v) {
+                tex[0] = v;
+            }
+        },
+        back: {
+            set: function(v) {
+                tex[1] = v;
+            }
+        },
+        left: {
+            set: function(v) {
+                tex[2] = v;
+            }
+        },
+        right: {
+            set: function(v) {
+                tex[3] = v;
+            }
+        },
+        top: {
+            set: function(v) {
+                tex[4] = v;
+            }
+        },
+        bottom: {
+            set: function(v) {
+                tex[5] = v;
+            }
+        }
+    });
 
 }
+
 Cube.prototype = Object.create(Generic.prototype);
-
-// source can be an ImageData, HTMLImageElement, HTMLCanvasElement, HTMLVideoElement, or
-// an ArrayBufferView, for which an wh and type must be given
-// such as gl.UNSIGNED_BYTE
-// image must be an power of 2
-function Texture(source, scale, wh, type) {
-    this.gltexture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, this.gltexture);
-    if (wh)
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, wh, wh, 0, gl.RGBA, type, source);
-    else
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 0, gl.RGBA, gl.UNSIGNED_BYTE, source);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-    gl.bindTexture(gl.TEXTURE_2D, null);
-
-    this.scale = 1;
-}

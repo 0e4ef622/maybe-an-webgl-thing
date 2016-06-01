@@ -13,14 +13,16 @@ var world = new World();
     world.objects.push(new Cube(1, -.5, 0, 230, 230, 0, 255, 1, 3, 1));
     world.objects.push(new Cube(0, 1.5, 0, 230, 230, 0, 255));
     // I
-    world.objects.push(new Cube(4, 0, 0, 230, 230, 0, 255, 1, 2, 1));
+    var b = new Cube(4, 0, 0, 230, 230, 0, 255, 1, 2, 1);
+    world.objects.push(b);
     world.objects.push(new Cube(4, 1.5, 0, 230, 230, 0, 255, 3, 1, 1));
     world.objects.push(new Cube(4, -1.5, 0, 230, 230, 0, 255, 3, 1, 1));
     // A
     world.objects.push(new Cube(5, -.5, 26, 0, 150, 0, 255));
     world.objects.push(new Cube(6, -.5, 26, 0, 150, 0, 255, 1, 3, 1));
     world.objects.push(new Cube(4, -.5, 26, 0, 150, 0, 255, 1, 3, 1));
-    world.objects.push(new Cube(5, 1.5, 26, 0, 150, 0, 255));
+    var c = new Cube(5, 1.5, 26, 0, 150, 0, 255);
+    world.objects.push(c);
     // S
     world.objects.push(new Cube(2, .5, 26, 0, 150, 0, 255));
     world.objects.push(new Cube(1.5, 1.5, 26, 0, 150, 0, 255, 2, 1, 1));
@@ -36,7 +38,33 @@ var world = new World();
     world.objects.push(new Cube(-6.5, 1.5, 26, 0, 150, 0, 255, 2, 1, 1));
     world.objects.push(new Cube(-6, -.5, 26, 0, 150, 0, 255));
     // teh graund
-    world.objects.push(new Cube(0, -2.5, 0, 160, 160, 160, 255, 200, 1, 200));
+    var g = new Cube(0, -2.5, 0, 160, 160, 160, 255, 200, 1, 200);
+    world.objects.push(g);
+    addEventListener("load", function(){
+        var img = new Image();
+        img.src = "awesomeface.png";
+        img.onload = function() {
+            var a = new Texture(img);
+            a.repeat = [4, 4];
+            g.textures.top = a;
+            var c = new Texture(a);
+            c.repeat = [1, 2];
+            b.textures.front = c;
+        };
+        var img2 = new Image();
+        img2.src = "container.jpg";
+        img2.onload = function() {
+            var a = new Texture(img2);
+            c.textures.front = a;
+        };
+        var img3 = new Image();
+        img3.src = "M-32.png";
+        img3.onload = function() {
+            var a = new Texture(img3);
+            a.repeat = [1, 2];
+            b.textures.back = a;
+        };
+    });
 
     world.camera.pos.z = 13;
 
@@ -71,7 +99,7 @@ var world = new World();
         var cnv = document.getElementById("cnv");
 
         var pitch = 0,
-            yaw = 0;
+            yaw = -Math.PI/2;
 
         // for people with an touchscreen
         var prevTouch = {x: 0, y: 0};
