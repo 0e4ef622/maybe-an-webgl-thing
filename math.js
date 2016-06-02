@@ -142,6 +142,18 @@ Mat3.prototype.det = function () {
         I = a*e-b*d;
     return a*A+b*B+c*C;
 }
+
+/**
+ * Check for equality
+ * @return {boolean}
+ */
+Mat3.prototype.equals = function (m) {
+    var a = this.mat;
+    return a[0] == m[0] && a[1] == m[1] && a[2] == m[2] &&
+           a[3] == m[3] && a[4] == m[4] && a[5] == m[5] &&
+           a[6] == m[6] && a[7] == m[7] && a[8] == m[8];
+}
+
 /**
  * 4x4 Matrix
  * @constructor
@@ -407,6 +419,18 @@ Mat4.prototype.det = function () {
                m[12] * m[6]  * m[9];
     return m[0] * a + m[1] * b + m[2] * c + m[3] * d;
 };
+
+/**
+ * Check for equality
+ * @return {boolean}
+ */
+Mat4.prototype.equals = function (m) {
+    var a = this.mat;
+    return a[0] == m[0] && a[1] == m[1] && a[2] == m[2] && a[3] == m[3] &&
+           a[4] == m[4] && a[5] == m[5] && a[6] == m[6] && a[7] == m[7] &&
+           a[8] == m[8] && a[9] == m[9] && a[10] == m[10] && a[11] == m[11] &&
+           a[12] == m[12] && a[13] == m[13] && a[14] == m[14] && a[15] == m[15];
+}
 /**
  * A 3D vector
  * @constructor
@@ -523,6 +547,15 @@ Vec3.prototype.norm = function () {
     return this.div(this.mag());
 }
 /**
+ * Check for equality
+ * @return {boolean}
+ */
+Vec3.prototype.equals = function (v) {
+    var t = this;
+    return t.x == v.x && t.y == v.y && t.z == v.z;
+}
+
+/**
  * A 4D vector
  * @constructor
  * @struct
@@ -617,4 +650,13 @@ Vec4.prototype.dot = function (v) {
 Vec4.prototype.mag = function () { // magnitude
     var t = this;
     return Math.sqrt(t.x*t.x+t.y*t.y+t.z*t.z+t.w*t.w);
+}
+
+/**
+ * Check for equality
+ * @return {boolean}
+ */
+Vec4.prototype.equals = function (v) {
+    var t = this;
+    return t.x == v.x && t.y == v.y && t.z == v.z && t.w == v.w;
 }
