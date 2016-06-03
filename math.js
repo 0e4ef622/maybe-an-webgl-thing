@@ -575,10 +575,17 @@ function Vec4(x, y, z, w) {
     if (typeof y == "undefined") y = 0;
     if (typeof z == "undefined") z = 0;
     if (typeof w == "undefined") w = 0;
-    this.x = x;
-    this.y = y;
-    this.z = z;
-    this.w = w;
+    if (x.constructor === Vec3) {
+        this.x = x.x;
+        this.y = x.y;
+        this.z = x.z;
+        this.w = y;
+    } else {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.w = w;
+    }
 }
 
 /**
