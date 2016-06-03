@@ -81,12 +81,14 @@ window.addEventListener("load", function(){
         "attribute vec3 norm;"+
         "attribute vec2 texture_coord;"+
         "attribute float in_face;"+
+
         "uniform vec3 light_dir;"+
         "uniform mat4 tmat;"+
         "uniform mat4 cmat;"+
         "uniform mat4 pmat;"+
         "uniform mat3 nmat;"+
         "uniform mat4 lightSpaceMatrix;"+
+
         "varying lowp vec3 diffuse;"+
         "varying mediump vec3 reflect_dir;"+
         "varying mediump vec3 frag_pos;"+
@@ -109,11 +111,11 @@ window.addEventListener("load", function(){
         "varying mediump vec2 uv_texture;"+
         "varying mediump float face;"+
         "varying lowp vec3 diffuse;"+
+
         "uniform lowp vec3 ambient;"+
         "uniform lowp vec4 color;"+
         "uniform highp mat4 cmat;"+
         "uniform mediump vec3 cam_pos;"+
-
         "uniform sampler2D cube_front;"+
         "uniform sampler2D cube_back;"+
         "uniform sampler2D cube_left;"+
