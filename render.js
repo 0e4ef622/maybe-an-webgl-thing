@@ -69,7 +69,7 @@ window.addEventListener("load", function(){
     var cnv = document.getElementById("cnv");
     cnv.width = width;
     cnv.height = height;
-    gl = cnv.getContext("webgl") || cnv.getContext("webgl-experimental");
+    gl = cnv.getContext("webgl", {stencil: true}) || cnv.getContext("webgl-experimental", {stencil: true});
 
     if (!gl) {
         alert("Your browser does not support WebGL");
@@ -128,6 +128,7 @@ window.addEventListener("load", function(){
         "uniform mediump vec2 cube_right_repeat;"+
         "uniform mediump vec2 cube_top_repeat;"+
         "uniform mediump vec2 cube_bottom_repeat;"+
+        "uniform mediump float lighting;"+
 
         "lowp float pow64(mediump float b) {"+
             "mediump float acc = 1.0;"+
@@ -156,7 +157,7 @@ window.addEventListener("load", function(){
             "else if (face == 5.0)"+
                 "texColor = texture2D(cube_bottom, uv_texture * cube_bottom_repeat);"+
 
-            "gl_FragColor = vec4(ambient + diffuse + specular, 1) * mix(color, texColor, texColor.a);"+
+            "gl_FragColor = vec4(ambient + lighting * (diffuse + specular), 1) * mix(color, texColor, texColor.a);"+
         "}";
     var shadowVolVtxSrc =
         "attribute vec3 pos;"+
@@ -168,12 +169,8 @@ window.addEventListener("load", function(){
             "gl_Position = pmat * cmat * vec4(pos, 1.0);"+
         "}";
     var shadowVolFragSrc =
-        "void main() {"+
-            "gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);"+
-        "}";
+        "void main() {}";
     gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE);
-    gl.frontFace(gl.CW);
     gl.clearColor(.5, .6, 1, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -200,6 +197,7 @@ window.addEventListener("load", function(){
         ambientLoc = gl.getUniformLocation(prgm, "ambient"),
         camPosLoc = gl.getUniformLocation(prgm, "cam_pos"),
         LSMLoc = gl.getUniformLocation(prgm, "lightSpaceMatrix"),
+        lightingLoc = gl.getUniformLocation(prgm, "lighting"),
         cubeTexLocs = [gl.getUniformLocation(prgm, "cube_front"),
                        gl.getUniformLocation(prgm, "cube_back"),
                        gl.getUniformLocation(prgm, "cube_left"),
@@ -230,8 +228,13 @@ window.addEventListener("load", function(){
 
         gl.viewport(0, 0, cnv.width, cnv.height);
         gl.colorMask(1, 1, 1, 1);
+        gl.frontFace(gl.CW);
+        gl.depthMask(true);
+        gl.disable(gl.STENCIL_TEST);
+        gl.enable(gl.CULL_FACE);
 
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
         gl.useProgram(prgm);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elemBuf);
         gl.bindBuffer(gl.ARRAY_BUFFER, buf);
@@ -243,7 +246,6 @@ window.addEventListener("load", function(){
         gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "texture_coord"));
         gl.vertexAttribPointer(gl.getAttribLocation(prgm, "in_face"), 1, gl.FLOAT, false, 36, 32);
         gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "in_face"));
-
 
         gl.uniformMatrix4fv(pmatLoc, false, pmat);
 
@@ -269,8 +271,14 @@ window.addEventListener("load", function(){
         gl.uniform3f(lightDirLoc, world.lighting.lightDir.x, world.lighting.lightDir.y, world.lighting.lightDir.z);
         gl.uniform3f(ambientLoc, world.lighting.ambient.r/255, world.lighting.ambient.g/255, world.lighting.ambient.b/255);
 
+        drawWorld(gl, world, false);
 
-        drawWorld(gl, world);
+        gl.enable(gl.STENCIL_TEST);
+        gl.disable(gl.CULL_FACE);
+        gl.depthMask(false);
+        gl.stencilFunc(gl.ALWAYS, 1, -1);
+        gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.KEEP, gl.INCR_WRAP);
+        gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.KEEP, gl.DECR_WRAP);
 
         gl.useProgram(shadowVolPrgm);
         gl.uniformMatrix4fv(shadowVolCmatLoc, false, cmat);
@@ -281,6 +289,27 @@ window.addEventListener("load", function(){
         gl.vertexAttribPointer(gl.getAttribLocation(shadowVolPrgm, "pos"), 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(gl.getAttribLocation(shadowVolPrgm, "pos"));
         gl.drawArrays(gl.TRIANGLES, 0, shadowVolume.length/3);
+
+        gl.stencilFunc(gl.EQUAL, 0, -1);
+        gl.depthMask(true);
+        gl.enable(gl.CULL_FACE);
+        gl.colorMask(1, 1, 1, 1);
+        gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+        gl.clear(gl.DEPTH_BUFFER_BIT);
+
+        gl.useProgram(prgm);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elemBuf);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.vertexAttribPointer(gl.getAttribLocation(prgm, "pos"), 3, gl.FLOAT, false, 36, 0);
+        gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "pos"));
+        gl.vertexAttribPointer(gl.getAttribLocation(prgm, "norm"), 3, gl.FLOAT, false, 36, 12);
+        gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "norm"));
+        gl.vertexAttribPointer(gl.getAttribLocation(prgm, "texture_coord"), 2, gl.FLOAT, false, 36, 24);
+        gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "texture_coord"));
+        gl.vertexAttribPointer(gl.getAttribLocation(prgm, "in_face"), 1, gl.FLOAT, false, 36, 32);
+        gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "in_face"));
+
+        drawWorld(gl, world, true);
 
         frames++;
         requestAnimationFrame(render);
@@ -325,7 +354,8 @@ window.addEventListener("load", function(){
         return prgm;
     }
 
-    function drawWorld(gl, world) {
+    function drawWorld(gl, world, lighting) {
+        gl.uniform1f(lightingLoc, lighting);
         for (var i = 0; i < world.objects.length; i++) {
             var obj = world.objects[i];
 
@@ -335,7 +365,7 @@ window.addEventListener("load", function(){
             gl.uniformMatrix4fv(tmatLoc, false, new Float32Array(obj.tmat.transpose().mat));
             gl.uniform4f(colorLoc, obj.color.r/255, obj.color.g/255, obj.color.b/255, obj.color.a/255);
 
-            var texUnits = [gl.TEXTURE1, gl.TEXTURE2, gl.TEXTURE3, gl.TEXTURE4, gl.TEXTURE5, gl.TEXTURE6];
+            var texUnits = [gl.TEXTURE0, gl.TEXTURE1, gl.TEXTURE2, gl.TEXTURE3, gl.TEXTURE4, gl.TEXTURE5];
             for (var j = 0; j < texUnits.length; j++) {
                 gl.activeTexture(texUnits[j]);
                 if (obj.textures[j]) {
@@ -344,7 +374,7 @@ window.addEventListener("load", function(){
                 } else {
                     gl.bindTexture(gl.TEXTURE_2D, blankTex);
                 }
-                gl.uniform1i(cubeTexLocs[j], j+1);
+                gl.uniform1i(cubeTexLocs[j], j);
             }
 
             gl.drawElements(gl.TRIANGLES, cube.indices.length, gl.UNSIGNED_BYTE, 0);
