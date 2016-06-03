@@ -66,40 +66,6 @@ window.addEventListener("load", function(){
             0, 0,-(f+n)/(f-n), -1,
             0, 0, -2*f*n/(f-n), 0]);
 
-    /*var lightSpaceMatrix = (function() { // column major order
-        var minDepth = n = .1,
-            maxDepth = f = 35,
-            r = 11,
-            t = 20;
-        var depthPmat = new Mat4([
-                1/r, 0, 0, 0,
-                0, 1/t, 0, 0,
-                0, 0, -2/(f-n), -(f+n)/(f-n),
-                0, 0, 0, 1]);
-
-        var depthCmat = (function() {
-            var d = world.lighting.lightDir.neg();
-            var p = d.mult(25).add(new Vec3(3, -5, 5));
-            var up = new Vec3(0, 1, 0);
-            var right = up.cross(d).norm();
-            up = d.cross(right);
-            var lookat = new Mat4([
-                    right.x, right.y, right.z, 0,
-                    up.x, up.y, up.z, 0,
-                    d.x, d.y, d.z, 0,
-                    0, 0, 0, 1]);
-            p = new Mat4([
-                    1, 0, 0, -p.x,
-                    0, 1, 0, -p.y,
-                    0, 0, 1, -p.z,
-                    0, 0, 0, 1]);
-            return lookat.mult(p);
-        })();
-
-        return new Float32Array(depthPmat.mult(depthCmat).transpose().mat);
-
-    })();*/
-
     var cnv = document.getElementById("cnv");
     cnv.width = width;
     cnv.height = height;
@@ -109,12 +75,6 @@ window.addEventListener("load", function(){
         alert("Your browser does not support WebGL");
         return;
     }
-
-    /*var wglDepthTxtrExtension = gl.getExtension("WEBGL_depth_texture") || gl.getExtension("WEBKIT_WEBGL_depth_texture") || gl.getExtension("MOZ_WEBGL_depth_texture");
-
-    if (!wglDepthTxtrExtension) // this is temporary
-        console.log("aww no depth textures :(");
-    else console.log("yay depth textures!");*/
 
     var vtxSrc =
         "attribute vec3 pos;"+
@@ -130,7 +90,6 @@ window.addEventListener("load", function(){
         "varying lowp vec3 diffuse;"+
         "varying mediump vec3 reflect_dir;"+
         "varying mediump vec3 frag_pos;"+
-        //"varying mediump vec4 light_pos;"+
         "varying vec2 uv_texture;"+
         "varying float face;"+
 
@@ -141,7 +100,6 @@ window.addEventListener("load", function(){
             "reflect_dir = reflect(light_dir, normal);"+
             "frag_pos = vec3(tmat * vec4(pos, 1.0));"+
 
-            //"light_pos = lightSpaceMatrix * tmat * vec4(pos, 1.0);"+
             "uv_texture = texture_coord;"+
             "face = in_face;"+
         "}";
@@ -149,7 +107,6 @@ window.addEventListener("load", function(){
         "varying mediump vec3 reflect_dir;"+
         "varying mediump vec3 frag_pos;"+
         "varying mediump vec2 uv_texture;"+
-        //"varying mediump vec4 light_pos;"+
         "varying mediump float face;"+
         "varying lowp vec3 diffuse;"+
         "uniform lowp vec3 ambient;"+
@@ -157,7 +114,6 @@ window.addEventListener("load", function(){
         "uniform highp mat4 cmat;"+
         "uniform mediump vec3 cam_pos;"+
 
-        //"uniform sampler2D shadow_map;"+
         "uniform sampler2D cube_front;"+
         "uniform sampler2D cube_back;"+
         "uniform sampler2D cube_left;"+
@@ -178,30 +134,7 @@ window.addEventListener("load", function(){
             "}"+
             "return acc;"+
         "}"+
-/*
-        (!wglDepthTxtrExtension ?
-         "mediump float unpack_depth(mediump vec4 rgba_depth) {"+
-             "return dot(rgba_depth, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/160581375.0));"+
-         "}"
-         : "")+
 
-        "const mediump float bias = .001;"+
-        "lowp float shadow(mediump vec4 light_pos) {"+
-            "mediump vec3 proj_coords = light_pos.xyz / light_pos.w;"+
-            "proj_coords = 0.5 + proj_coords * 0.5;"+
-            "if (proj_coords.x > 0.0 && proj_coords.x < 1.0 && proj_coords.y > 0.0 && proj_coords.y < 1.0 && proj_coords.z > 0.0 && proj_coords.z < (1.0 - bias*10.0)) {"+
-                (!wglDepthTxtrExtension ?
-                 "mediump float closest_depth = unpack_depth(texture2D(shadow_map, proj_coords.xy));"
-                 :
-                 "mediump float closest_depth = texture2D(shadow_map, proj_coords.xy).r;")+
-                "mediump float current_depth = proj_coords.z;"+
-                //"return 1.0 - smoothstep(bias, .002, current_depth - closest_depth);"+
-                "return current_depth - bias > closest_depth ? 0.0 : 1.0;"+
-            "} else {"+
-                "return 1.0;"+
-            "}"+
-        "}"+
-*/
         "void main() {"+
             "mediump vec3 cam_dir = normalize(cam_pos - frag_pos);"+
             "lowp float spec = pow64(max(dot(cam_dir, reflect_dir), 0.0));"+
@@ -221,34 +154,21 @@ window.addEventListener("load", function(){
             "else if (face == 5.0)"+
                 "texColor = texture2D(cube_bottom, uv_texture * cube_bottom_repeat);"+
 
-            //"gl_FragColor = vec4(ambient + shadow(light_pos) * (diffuse + specular), 1) * mix(color, texColor, texColor.a);"+
             "gl_FragColor = vec4(ambient + diffuse + specular, 1) * mix(color, texColor, texColor.a);"+
         "}";
-    /*var depthMapVtxSrc =
+    var shadowVolVtxSrc =
         "attribute vec3 pos;"+
-        "uniform mat4 lightSpaceMatrix;"+
-        "uniform mat4 tmat;"+
-        (!wglDepthTxtrExtension ? "varying mediump float depth;" : "")+
+
+        "uniform mat4 cmat;"+
+        "uniform mat4 pmat;"+
 
         "void main() {"+
-            "vec4 p = lightSpaceMatrix * tmat * vec4(pos, 1.0);"+
-            (!wglDepthTxtrExtension ? "depth = p.z*.5+.5;" : "")+
-            "gl_Position = p;"+
+            "gl_Position = pmat * cmat * vec4(pos, 1.0);"+
         "}";
-    var depthMapFragSrc =
-        (!wglDepthTxtrExtension ? "varying mediump float depth;"+
-
-        "mediump vec4 pack_depth(mediump float depth) {"+
-            "mediump vec4 enc = vec4(1.0, 255.0, 65025.0, 160581375.0) * depth;"+
-            "enc = fract(enc);"+
-            "enc -= enc.yzww * vec4(1.0/255.0, 1.0/255.0, 1.0/255.0, 0.0);"+
-            "return enc;"+
-        "}" : "")+
-
+    var shadowVolFragSrc =
         "void main() {"+
-            (!wglDepthTxtrExtension ? "gl_FragColor = pack_depth(depth);" : "")+
-        "}";*/
-
+            "gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);"+
+        "}";
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
     gl.frontFace(gl.CW);
@@ -256,53 +176,19 @@ window.addEventListener("load", function(){
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     var prgm = compileShaders(gl, vtxSrc, fragSrc);
-    //var depthMapPrgm = compileShaders(gl, depthMapVtxSrc, depthMapFragSrc);
+    var shadowVolPrgm = compileShaders(gl, shadowVolVtxSrc, shadowVolFragSrc);
 
     var buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, cube.vertices, gl.STATIC_DRAW);
-    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "pos"), 3, gl.FLOAT, false, 36, 0);
-    gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "pos"));
-    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "norm"), 3, gl.FLOAT, false, 36, 12);
-    gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "norm"));
-    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "texture_coord"), 2, gl.FLOAT, false, 36, 24);
-    gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "texture_coord"));
-    gl.vertexAttribPointer(gl.getAttribLocation(prgm, "in_face"), 1, gl.FLOAT, false, 36, 32);
-    gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "in_face"));
-
-    /*gl.vertexAttribPointer(gl.getAttribLocation(depthMapPrgm, "pos"), 3, gl.FLOAT, false, 36, 0);
-    gl.enableVertexAttribArray(gl.getAttribLocation(depthMapPrgm, "pos"));*/
 
     var elemBuf = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elemBuf);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, cube.indices, gl.STATIC_DRAW);
-/*
-    var depthMapFBO = gl.createFramebuffer(),
-        depthMap = gl.createTexture(),
-        depthMapColorBuffer = gl.createRenderbuffer();
 
-    gl.bindTexture(gl.TEXTURE_2D, depthMap);
-    var texComponent = wglDepthTxtrExtension ? gl.DEPTH_COMPONENT : gl.RGBA;
-    var format = wglDepthTxtrExtension ? gl.UNSIGNED_SHORT : gl.UNSIGNED_BYTE;
-    gl.texImage2D(gl.TEXTURE_2D, 0, texComponent, shadowResolution[0], shadowResolution[1], 0, texComponent, format, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    var shadowVolBuf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, shadowVolBuf);
 
-    gl.bindRenderbuffer(gl.RENDERBUFFER, depthMapColorBuffer);
-    gl.renderbufferStorage(gl.RENDERBUFFER, wglDepthTxtrExtension ? gl.RGBA4 : gl.DEPTH_COMPONENT16, shadowResolution[0], shadowResolution[1]);
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
-    if (wglDepthTxtrExtension) {
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthMap, 0);
-        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, depthMapColorBuffer);
-    } else {
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depthMap, 0);
-        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthMapColorBuffer);
-    }
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-*/
     var tmatLoc = gl.getUniformLocation(prgm, "tmat"),
         nmatLoc = gl.getUniformLocation(prgm, "nmat"),
         cmatLoc = gl.getUniformLocation(prgm, "cmat"),
@@ -311,7 +197,6 @@ window.addEventListener("load", function(){
         lightDirLoc = gl.getUniformLocation(prgm, "light_dir"),
         ambientLoc = gl.getUniformLocation(prgm, "ambient"),
         camPosLoc = gl.getUniformLocation(prgm, "cam_pos"),
-        shadowMapLoc = gl.getUniformLocation(prgm, "shadow_map"),
         LSMLoc = gl.getUniformLocation(prgm, "lightSpaceMatrix"),
         cubeTexLocs = [gl.getUniformLocation(prgm, "cube_front"),
                        gl.getUniformLocation(prgm, "cube_back"),
@@ -324,9 +209,9 @@ window.addEventListener("load", function(){
                              gl.getUniformLocation(prgm, "cube_left_repeat"),
                              gl.getUniformLocation(prgm, "cube_right_repeat"),
                              gl.getUniformLocation(prgm, "cube_top_repeat"),
-                             gl.getUniformLocation(prgm, "cube_bottom_repeat")];
-      /*depthMapTmatLoc = gl.getUniformLocation(depthMapPrgm, "tmat"),
-        depthMapLSMLoc = gl.getUniformLocation(depthMapPrgm, "lightSpaceMatrix");*/
+                             gl.getUniformLocation(prgm, "cube_bottom_repeat")],
+        shadowVolCmatLoc = gl.getUniformLocation(shadowVolPrgm, "cmat"),
+        shadowVolPmatLoc = gl.getUniformLocation(shadowVolPrgm, "pmat");
 
     window.requestAnimationFrame = (window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || function(f){setTimeout(f,10);});
 
@@ -340,30 +225,25 @@ window.addEventListener("load", function(){
 
     var frames = 0;
     function render() {
-        /*gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
-
-          gl.useProgram(depthMapPrgm);
-          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-          gl.viewport(0, 0, shadowResolution[0], shadowResolution[1]);
-          //!wglDepthTxtrExtension && gl.colorMask(0, 0, 0, 0);
-          gl.uniformMatrix4fv(depthMapLSMLoc, false, lightSpaceMatrix);
-
-          drawWorldDepthMap(gl, world);
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);*/
 
         gl.viewport(0, 0, cnv.width, cnv.height);
         gl.colorMask(1, 1, 1, 1);
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.useProgram(prgm);
-/*
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, depthMap);
-        gl.uniform1i(shadowMapLoc, 0);
-*/
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elemBuf);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.vertexAttribPointer(gl.getAttribLocation(prgm, "pos"), 3, gl.FLOAT, false, 36, 0);
+        gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "pos"));
+        gl.vertexAttribPointer(gl.getAttribLocation(prgm, "norm"), 3, gl.FLOAT, false, 36, 12);
+        gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "norm"));
+        gl.vertexAttribPointer(gl.getAttribLocation(prgm, "texture_coord"), 2, gl.FLOAT, false, 36, 24);
+        gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "texture_coord"));
+        gl.vertexAttribPointer(gl.getAttribLocation(prgm, "in_face"), 1, gl.FLOAT, false, 36, 32);
+        gl.enableVertexAttribArray(gl.getAttribLocation(prgm, "in_face"));
+
+
         gl.uniformMatrix4fv(pmatLoc, false, pmat);
-        //gl.uniformMatrix4fv(LSMLoc, false, lightSpaceMatrix);
 
         // obscure code that i probably by now forgot how it works
         var d = world.camera.dir;
@@ -381,13 +261,24 @@ window.addEventListener("load", function(){
                 0, 1, 0, -p.y,
                 0, 0, 1, -p.z,
                 0, 0, 0, 1]);
-        var cmat = lookat.mult(p).transpose().mat;
-        gl.uniformMatrix4fv(cmatLoc, false, new Float32Array(cmat));
+        var cmat = new Float32Array(lookat.mult(p).transpose().mat);
+        gl.uniformMatrix4fv(cmatLoc, false, cmat);
         gl.uniform3f(camPosLoc, world.camera.pos.x, world.camera.pos.y, world.camera.pos.z);
         gl.uniform3f(lightDirLoc, world.lighting.lightDir.x, world.lighting.lightDir.y, world.lighting.lightDir.z);
         gl.uniform3f(ambientLoc, world.lighting.ambient.r/255, world.lighting.ambient.g/255, world.lighting.ambient.b/255);
 
+
         drawWorld(gl, world);
+
+        gl.useProgram(shadowVolPrgm);
+        gl.uniformMatrix4fv(shadowVolCmatLoc, false, cmat);
+        gl.uniformMatrix4fv(shadowVolPmatLoc, false, pmat);
+        var shadowVolume = genShadowVolume(world);
+        gl.bindBuffer(gl.ARRAY_BUFFER, shadowVolBuf);
+        gl.bufferData(gl.ARRAY_BUFFER, shadowVolume, gl.DYNAMIC_DRAW);
+        gl.vertexAttribPointer(gl.getAttribLocation(shadowVolPrgm, "pos"), 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(gl.getAttribLocation(shadowVolPrgm, "pos"));
+        gl.drawArrays(gl.TRIANGLES, 0, shadowVolume.length/3);
 
         frames++;
         requestAnimationFrame(render);
@@ -457,14 +348,78 @@ window.addEventListener("load", function(){
             gl.drawElements(gl.TRIANGLES, cube.indices.length, gl.UNSIGNED_BYTE, 0);
         }
     }
-/*
-    function drawWorldDepthMap(gl, world) {
-        for (var i = 0; i < world.objects.length; i++) {
-            var obj = world.objects[i];
 
-            gl.uniformMatrix4fv(depthMapTmatLoc, false, new Float32Array(obj.tmat.transpose().mat));
-            gl.drawElements(gl.TRIANGLES, cube.indices.length, gl.UNSIGNED_BYTE, 0);
+    function genShadowVolume(world) {
+        function edgeInArray(arr, p1, p2) {
+            for (var i = 0; i < arr.length; i += 2) {
+                if ((arr[i].equals(p1) && arr[i+1].equals(p2)) || (arr[i].equals(p2) && arr[i+1].equals(p1))) return i;
+            }
+            return -1;
         }
+        var edges = [];
+        for (var i = 0; i < world.objects.length; i++) {
+
+            var obj = world.objects[i];
+            for (var face = 0; face < 6; face++) {
+                var j = face*9*4;
+
+                var norm = new Vec3(cube.vertices[j+3], cube.vertices[j+4], cube.vertices[j+5]);
+                norm = (new Mat3(obj.tmat)).inverse().transpose().mult(norm);
+
+                if (norm.dot(world.lighting.lightDir) >= 0) { // if the face is facing away from the light
+
+                    for (var edge = 0; edge < 4; edge++) {
+
+                        var pos1, pos2;
+                        if (edge == 3) {
+                            //special stuff
+                            pos1 = new Vec4(cube.vertices[j+edge*9], cube.vertices[j+edge*9+1], cube.vertices[j+edge*9+2], 1);
+                            pos2 = new Vec4(cube.vertices[j], cube.vertices[j+1], cube.vertices[j+2], 1);
+                        } else {
+                            pos1 = new Vec4(cube.vertices[j+edge*9], cube.vertices[j+edge*9+1], cube.vertices[j+edge*9+2], 1);
+                            pos2 = new Vec4(cube.vertices[j+edge*9+9], cube.vertices[j+edge*9+10], cube.vertices[j+edge*9+11], 1);
+                        }
+                        pos1 = new Vec3(obj.tmat.mult(pos1));
+                        pos2 = new Vec3(obj.tmat.mult(pos2));
+
+                        var e;
+                        if ((e=edgeInArray(edges, pos1, pos2)) == -1) {
+                            edges.push(pos1, pos2);
+                        } else {
+                            edges.splice(e, 2);
+                        }
+                    }
+                }
+            }
+        }
+        var vertices = new Float32Array(edges.length*9);
+        for (var i = 0; i < edges.length; i += 2) {
+            var v1 = edges[i];
+            var v2 = edges[i+1];
+            var s = world.lighting.lightDir.mult(25);
+            var v3 = v2.add(s);
+            var v4 = v1.add(s);
+
+            vertices[i*9] = v1.x;
+            vertices[i*9+1] = v1.y;
+            vertices[i*9+2] = v1.z;
+            vertices[i*9+3] = v2.x;
+            vertices[i*9+4] = v2.y;
+            vertices[i*9+5] = v2.z;
+            vertices[i*9+6] = v3.x;
+            vertices[i*9+7] = v3.y;
+            vertices[i*9+8] = v3.z;
+            vertices[i*9+9] = v3.x;
+            vertices[i*9+10] = v3.y;
+            vertices[i*9+11] = v3.z;
+            vertices[i*9+12] = v4.x;
+            vertices[i*9+13] = v4.y;
+            vertices[i*9+14] = v4.z;
+            vertices[i*9+15] = v1.x;
+            vertices[i*9+16] = v1.y;
+            vertices[i*9+17] = v1.z;
+        }
+        return vertices;
     }
-*/
+
 });
