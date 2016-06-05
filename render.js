@@ -275,6 +275,7 @@ window.addEventListener("load", function(){
 
         gl.enable(gl.STENCIL_TEST);
         gl.disable(gl.CULL_FACE);
+        gl.colorMask(0, 0, 0, 0);
         gl.depthMask(false);
         gl.stencilFunc(gl.ALWAYS, 1, -1);
         gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.KEEP, gl.INCR_WRAP);
