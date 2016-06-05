@@ -556,8 +556,13 @@ Vec3.prototype.norm = function () {
  * Check for equality
  * @return {boolean}
  */
-Vec3.prototype.equals = function (v) {
+Vec3.prototype.equals = function (v, eps) {
     var t = this;
+    if (eps)
+        return (t.x <= v.x+eps && t.x >= v.x-eps) &&
+               (t.y <= v.y+eps && t.y >= v.y-eps) &&
+               (t.z <= v.z+eps && t.z >= v.z-eps);
+
     return t.x == v.x && t.y == v.y && t.z == v.z;
 }
 
@@ -669,7 +674,13 @@ Vec4.prototype.mag = function () { // magnitude
  * Check for equality
  * @return {boolean}
  */
-Vec4.prototype.equals = function (v) {
+Vec4.prototype.equals = function (v, eps) {
     var t = this;
+    if (eps)
+        return (t.x <= v.x+eps && t.x >= v.x-eps) &&
+               (t.y <= v.y+eps && t.y >= v.y-eps) &&
+               (t.z <= v.z+eps && t.z >= v.z-eps) &&
+               (t.w <= v.w+eps && t.w >= v.w-eps);
+
     return t.x == v.x && t.y == v.y && t.z == v.z && t.w == v.w;
 }
