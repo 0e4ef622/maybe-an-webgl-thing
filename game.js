@@ -17,6 +17,8 @@ var world = new World();
     world.objects.push(b);
     world.objects.push(new Cube(4, 1.5, 0, 230, 230, 0, 255, 3, 1, 1));
     world.objects.push(new Cube(4, -1.5, 0, 230, 230, 0, 255, 3, 1, 1));
+    // an wall behind teh HAI
+    world.objects.push(new Cube(4, 2, -3, 255, 255, 255, 255, 4, 10, 1));
     // A
     world.objects.push(new Cube(5, -.5, 26, 0, 150, 0, 255));
     world.objects.push(new Cube(6, -.5, 26, 0, 150, 0, 255, 1, 3, 1));
