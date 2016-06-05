@@ -186,7 +186,6 @@ window.addEventListener("load", function(){
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, cube.indices, gl.STATIC_DRAW);
 
     var shadowVolBuf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, shadowVolBuf);
 
     var tmatLoc = gl.getUniformLocation(prgm, "tmat"),
         nmatLoc = gl.getUniformLocation(prgm, "nmat"),
