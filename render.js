@@ -56,7 +56,7 @@ window.addEventListener("load", function(){
 
     var fov = 60; // degrees
     var minDepth = n = .1;
-    var maxDepth = f = 500;
+    var maxDepth = f = 200;
     var r = Math.tan(fov/180*Math.PI/2)*n;
     var t = r/aspectRatio;
 
