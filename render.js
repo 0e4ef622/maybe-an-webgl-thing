@@ -443,10 +443,6 @@ window.addEventListener("load", function(){
                         pos2 = new Vec4(rayPlaneIntersect(new Vec3(pos2), ld, pp, pn), 1)
                         pos3 = new Vec4(rayPlaneIntersect(new Vec3(pos3), ld, pp, pn), 1);
                         pos4 = new Vec4(rayPlaneIntersect(new Vec3(pos4), ld, pp, pn), 1);
-                        pos1 = pos1.add(new Vec4(pn.neg().mult(.1), 0));
-                        pos2 = pos2.add(new Vec4(pn.neg().mult(.1), 0));
-                        pos3 = pos3.add(new Vec4(pn.neg().mult(.1), 0));
-                        pos4 = pos4.add(new Vec4(pn.neg().mult(.1), 0));
                         faces.push(pos1, pos2, pos3, pos3, pos4, pos1);
                     }
                 }
