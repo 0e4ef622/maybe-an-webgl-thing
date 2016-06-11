@@ -20,7 +20,8 @@ var world = new World();
     // an wall behind teh HAI
     world.objects.push(new Cube(4, 2, -3, 255, 255, 255, 255, 4, 10, 1));
     // A
-    world.objects.push(new Cube(5, -.5, 26, 0, 150, 0, 255));
+    var k = new Cube(5, -.5, 26, 0, 150, 0, 255);
+    world.objects.push(k);
     world.objects.push(new Cube(6, -.5, 26, 0, 150, 0, 255, 1, 3, 1));
     world.objects.push(new Cube(4, -.5, 26, 0, 150, 0, 255, 1, 3, 1));
     var c = new Cube(5, 1.5, 26, 0, 150, 0, 255);
@@ -66,12 +67,23 @@ var world = new World();
             a.repeat = [1, 2];
             b.textures.back = a;
         };
+        var img4 = new Image();
+        img4.src = "CUuGS.png";
+        img4.onload = function() {
+            var a = new Texture(img4, gl.NEAREST);
+            for (var i = 0; i < k.textures.length; i++) {
+                k.textures[i] = a;
+            }
+        };
     });
 
     world.camera.pos.z = 13;
 
     var pressedKeys = {};
     var pt = (new Date()).getTime();
+    var anthing = new Cube();
+    anthing.color.r = 255;
+    world.objects.push(anthing);
     setInterval(function() {
         var t = (new Date()).getTime();
         var dt = t - pt;
@@ -87,6 +99,9 @@ var world = new World();
         (pressedKeys['U+0044'] || pressedKeys['d']) && world.camera.move(.1, 0, 0);
         (pressedKeys['U+0051'] || pressedKeys['q']) && world.camera.move(0, -.1, 0);
         (pressedKeys['U+0045'] || pressedKeys['e']) && world.camera.move(0, .1, 0);
+
+        var c = world.camera;
+        anthing.pos = rayPlaneIntersect(c.pos, c.dir.neg(), new Vec3(0, -2, 0), new Vec3(0, -1, 0)) || new Vec3(0, 10, 0);
 
     }, 10);
 

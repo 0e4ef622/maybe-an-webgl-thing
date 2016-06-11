@@ -160,13 +160,13 @@ window.addEventListener("load", function(){
             "gl_FragColor = vec4(ambient + lighting * (diffuse + specular), 1) * mix(color, texColor, texColor.a);"+
         "}";
     var shadowVolVtxSrc =
-        "attribute vec3 pos;"+
+        "attribute vec4 pos;"+
 
         "uniform mat4 cmat;"+
         "uniform mat4 pmat;"+
 
         "void main() {"+
-            "gl_Position = pmat * cmat * vec4(pos, 1.0);"+
+            "gl_Position = pmat * cmat * pos;"+
         "}";
     var shadowVolFragSrc =
         "void main() {}";
@@ -276,9 +276,9 @@ window.addEventListener("load", function(){
         gl.disable(gl.CULL_FACE);
         gl.colorMask(0, 0, 0, 0);
         gl.depthMask(false);
-        gl.stencilFunc(gl.ALWAYS, 1, -1);
-        gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.KEEP, gl.INCR_WRAP);
-        gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.KEEP, gl.DECR_WRAP);
+        gl.stencilFunc(gl.ALWAYS, 0, -1);
+        gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.INCR_WRAP, gl.KEEP);
+        gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.DECR_WRAP, gl.KEEP);
 
         gl.useProgram(shadowVolPrgm);
         gl.uniformMatrix4fv(shadowVolCmatLoc, false, cmat);
@@ -286,9 +286,9 @@ window.addEventListener("load", function(){
         var shadowVolume = genShadowVolume(world);
         gl.bindBuffer(gl.ARRAY_BUFFER, shadowVolBuf);
         gl.bufferData(gl.ARRAY_BUFFER, shadowVolume, gl.DYNAMIC_DRAW);
-        gl.vertexAttribPointer(gl.getAttribLocation(shadowVolPrgm, "pos"), 3, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(gl.getAttribLocation(shadowVolPrgm, "pos"), 4, gl.FLOAT, false, 16, 0);
         gl.enableVertexAttribArray(gl.getAttribLocation(shadowVolPrgm, "pos"));
-        gl.drawArrays(gl.TRIANGLES, 0, shadowVolume.length/3);
+        gl.drawArrays(gl.TRIANGLES, 0, shadowVolume.length/4);
 
         gl.stencilFunc(gl.EQUAL, 0, -1);
         gl.depthMask(true);
@@ -389,9 +389,11 @@ window.addEventListener("load", function(){
             return -1;
         }
         var edges = [];
+        var faces = [];
         for (var i = 0; i < world.objects.length; i++) {
 
             var obj = world.objects[i];
+            var faceEdges = [];
             for (var face = 0; face < 6; face++) {
                 var j = face*9*4;
 
@@ -411,45 +413,80 @@ window.addEventListener("load", function(){
                             pos1 = new Vec4(cube.vertices[j+edge*9], cube.vertices[j+edge*9+1], cube.vertices[j+edge*9+2], 1);
                             pos2 = new Vec4(cube.vertices[j+edge*9+9], cube.vertices[j+edge*9+10], cube.vertices[j+edge*9+11], 1);
                         }
-                        pos1 = new Vec3(obj.tmat.mult(pos1));
-                        pos2 = new Vec3(obj.tmat.mult(pos2));
+                        pos1 = obj.tmat.mult(pos1);
+                        pos2 = obj.tmat.mult(pos2);
 
-                        var e;
-                        if ((e=edgeInArray(edges, pos1, pos2)) == -1) {
-                            edges.push(pos1, pos2);
+                        var e = edgeInArray(faceEdges, pos1, pos2);
+                        if (e == -1) {
+                            faceEdges.push(pos1, pos2);
                         } else {
-                            edges.splice(e, 2);
+                            faceEdges.splice(e, 2);
                         }
+                    }
+                    var pos1 = new Vec4(cube.vertices[j], cube.vertices[j+1], cube.vertices[j+2], 1);
+                    var pos2 = new Vec4(cube.vertices[j+9], cube.vertices[j+10], cube.vertices[j+11], 1);
+                    var pos3 = new Vec4(cube.vertices[j+18], cube.vertices[j+19], cube.vertices[j+20], 1);
+                    var pos4 = new Vec4(cube.vertices[j+27], cube.vertices[j+28], cube.vertices[j+29], 1);
+
+                    // cap near end of shadow
+                    pos1 = obj.tmat.mult(pos1);
+                    pos2 = obj.tmat.mult(pos2);
+                    pos3 = obj.tmat.mult(pos3);
+                    pos4 = obj.tmat.mult(pos4);
+                    faces.push(pos1, pos4, pos3, pos3, pos2, pos1);
+                    // TODO cap the far end of shadow
+                    var ld = world.lighting.lightDir;
+                    var pn = world.camera.dir.neg();
+                    var pp = world.camera.pos.add(pn.mult(maxDepth));
+                    if (pos1 = rayPlaneIntersect(new Vec3(pos1), ld, pp, pn)) {
+                        pos1 = new Vec4(pos1, 1);
+                        pos2 = new Vec4(rayPlaneIntersect(new Vec3(pos2), ld, pp, pn), 1)
+                        pos3 = new Vec4(rayPlaneIntersect(new Vec3(pos3), ld, pp, pn), 1);
+                        pos4 = new Vec4(rayPlaneIntersect(new Vec3(pos4), ld, pp, pn), 1);
+                        faces.push(pos1, pos2, pos3, pos3, pos4, pos1);
                     }
                 }
             }
+            edges = edges.concat(faceEdges);
         }
-        var vertices = new Float32Array(edges.length*9);
+        var vertices = new Float32Array(edges.length*12 + faces.length*4);
         for (var i = 0; i < edges.length; i += 2) {
             var v1 = edges[i];
             var v2 = edges[i+1];
-            var s = world.lighting.lightDir.mult(25);
-            var v3 = v2.add(s);
-            var v4 = v1.add(s);
+            var v3 = v4 = new Vec4(world.lighting.lightDir, 0);
 
-            vertices[i*9] = v1.x;
-            vertices[i*9+1] = v1.y;
-            vertices[i*9+2] = v1.z;
-            vertices[i*9+3] = v2.x;
-            vertices[i*9+4] = v2.y;
-            vertices[i*9+5] = v2.z;
-            vertices[i*9+6] = v3.x;
-            vertices[i*9+7] = v3.y;
-            vertices[i*9+8] = v3.z;
-            vertices[i*9+9] = v3.x;
-            vertices[i*9+10] = v3.y;
-            vertices[i*9+11] = v3.z;
-            vertices[i*9+12] = v4.x;
-            vertices[i*9+13] = v4.y;
-            vertices[i*9+14] = v4.z;
-            vertices[i*9+15] = v1.x;
-            vertices[i*9+16] = v1.y;
-            vertices[i*9+17] = v1.z;
+            vertices[i*12] = v1.x;
+            vertices[i*12+1] = v1.y;
+            vertices[i*12+2] = v1.z;
+            vertices[i*12+3] = v1.w;
+            vertices[i*12+4] = v2.x;
+            vertices[i*12+5] = v2.y;
+            vertices[i*12+6] = v2.z;
+            vertices[i*12+7] = v2.w;
+            vertices[i*12+8] = v3.x;
+            vertices[i*12+9] = v3.y;
+            vertices[i*12+10] = v3.z;
+            vertices[i*12+11] = v3.w;
+            vertices[i*12+12] = v3.x;
+            vertices[i*12+13] = v3.y;
+            vertices[i*12+14] = v3.z;
+            vertices[i*12+15] = v3.w;
+            vertices[i*12+16] = v4.x;
+            vertices[i*12+17] = v4.y;
+            vertices[i*12+18] = v4.z;
+            vertices[i*12+19] = v4.w;
+            vertices[i*12+20] = v1.x;
+            vertices[i*12+21] = v1.y;
+            vertices[i*12+22] = v1.z;
+            vertices[i*12+23] = v1.w;
+        }
+        for (var i = 0; i < faces.length; i++) {
+            var vi = edges.length*12 + i*4;
+            var v = faces[i];
+            vertices[vi] = v.x;
+            vertices[vi+1] = v.y;
+            vertices[vi+2] = v.z;
+            vertices[vi+3] = v.w;
         }
         return vertices;
     }

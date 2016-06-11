@@ -141,7 +141,7 @@ Camera.prototype.move = function (x, y, z) {
 // an ArrayBufferView, for which an wh and type must be given
 // such as gl.UNSIGNED_BYTE
 // image must be an power of 2
-function Texture(source, scale, wh, type) {
+function Texture(source, sample, wh, type) {
     if (source.constructor === Texture) {
         this.gltexture = source.gltexture;
     } else {
@@ -151,8 +151,8 @@ function Texture(source, scale, wh, type) {
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, wh, wh, 0, gl.RGBA, type, source);
         else
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, sample || gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, sample || gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
         gl.bindTexture(gl.TEXTURE_2D, null);

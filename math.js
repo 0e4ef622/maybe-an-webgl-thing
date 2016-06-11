@@ -684,3 +684,19 @@ Vec4.prototype.equals = function (v, eps) {
 
     return t.x == v.x && t.y == v.y && t.z == v.z && t.w == v.w;
 }
+
+/**
+ * @param {Vec3} rp
+ * @param {Vec3} rd
+ * @param {Vec3} pp
+ * @param {Vec3} pn
+ * @return {Vec3}
+ */
+function rayPlaneIntersect(rp, rd, pp, pn) { // ray position, ray direction, plane position, plane normal
+    var d = pn.dot(rd);
+    if (Math.abs(d) > .0001) {
+        var t = pp.subtract(rp).dot(pn) / d;
+        if (t >= 0) return rp.add(rd.mult(t));
+    }
+    return null;
+}
