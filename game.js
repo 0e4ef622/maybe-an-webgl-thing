@@ -133,9 +133,11 @@ var world = new World();
             yaw += (prevTouch.x - e.touches[0].pageX)/300;
             pitch += (prevTouch.y - e.touches[0].pageY)/300;
 
-            world.camera.dir.x = Math.cos(pitch) * Math.cos(yaw);
-            world.camera.dir.y = Math.sin(pitch);
-            world.camera.dir.z = Math.cos(pitch) * Math.sin(yaw);;
+            var c = world.camera;
+            c.dir.x = Math.cos(pitch) * Math.cos(yaw);
+            c.dir.y = Math.sin(pitch);
+            c.dir.z = Math.cos(pitch) * Math.sin(yaw);;
+            anthing.pos = rayPlaneIntersect(c.pos, c.dir.neg(), new Vec3(0, -2, 0), new Vec3(0, -1, 0)) || new Vec3(0, 10, 0);
 
             prevTouch.x = e.touches[0].pageX;
             prevTouch.y = e.touches[0].pageY;
@@ -159,9 +161,11 @@ var world = new World();
             yaw += e.movementX/300;
             pitch += e.movementY/300;
 
-            world.camera.dir.x = Math.cos(pitch) * Math.cos(yaw);
-            world.camera.dir.y = Math.sin(pitch);
-            world.camera.dir.z = Math.cos(pitch) * Math.sin(yaw);;
+            var c = world.camera;
+            c.dir.x = Math.cos(pitch) * Math.cos(yaw);
+            c.dir.y = Math.sin(pitch);
+            c.dir.z = Math.cos(pitch) * Math.sin(yaw);;
+            anthing.pos = rayPlaneIntersect(c.pos, c.dir.neg(), new Vec3(0, -2, 0), new Vec3(0, -1, 0)) || new Vec3(0, 10, 0);
         });
 
     });

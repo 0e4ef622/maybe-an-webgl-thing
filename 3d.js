@@ -9,6 +9,7 @@ function World() {
         },
         lightDir: new Vec3(0.267261, -0.534522, -0.801784) // unit vector
     };
+    this.onrender = function(){};
 }
 
 function Generic(x, y, z) {
@@ -141,24 +142,22 @@ Camera.prototype.move = function (x, y, z) {
 // an ArrayBufferView, for which an wh and type must be given
 // such as gl.UNSIGNED_BYTE
 // image must be an power of 2
-function Texture(source, sample, wh, type) {
+function Texture(source, sample, wh, type, repeat) {
     if (source.constructor === Texture) {
-        this.gltexture = source.gltexture;
+        if (source.gltexture) {
+            this.gltexture = source.gltexture;
+        } else {
+            this.gltexture = null;
+            this.source = source.source;
+        }
     } else {
-        this.gltexture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this.gltexture);
-        if (wh)
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, wh, wh, 0, gl.RGBA, type, source);
-        else
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, sample || gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, sample || gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-        gl.bindTexture(gl.TEXTURE_2D, null);
+        this.gltexture = null;
+        this.source = source;
     }
-
-    this.repeat = [1, 1];
+    this.sample = sample;
+    this.wh = wh;
+    this.type = type;
+    this.repeat = repeat || [1, 1];
 }
 
 function Cube(x, y, z, r, g, b, a, sx, sy, sz) {

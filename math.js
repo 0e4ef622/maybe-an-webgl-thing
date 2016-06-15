@@ -696,7 +696,7 @@ function rayPlaneIntersect(rp, rd, pp, pn) { // ray position, ray direction, pla
     var d = pn.dot(rd);
     if (Math.abs(d) > .0001) {
         var t = pp.subtract(rp).dot(pn) / d;
-        if (t >= 0) return rp.add(rd.mult(t));
+        return rp.add(rd.mult(t));
     }
     return null;
 }

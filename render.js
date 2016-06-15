@@ -368,9 +368,22 @@ window.addEventListener("load", function(){
             var texUnits = [gl.TEXTURE0, gl.TEXTURE1, gl.TEXTURE2, gl.TEXTURE3, gl.TEXTURE4, gl.TEXTURE5];
             for (var j = 0; j < texUnits.length; j++) {
                 gl.activeTexture(texUnits[j]);
-                if (obj.textures[j]) {
-                    gl.bindTexture(gl.TEXTURE_2D, obj.textures[j].gltexture);
-                    gl.uniform2fv(cubeTexRepeatLocs[j], obj.textures[j].repeat);
+                var t;
+                if (t=obj.textures[j]) {
+                    if (!t.gltexture) {
+                        t.gltexture = gl.createTexture();
+                        gl.bindTexture(gl.TEXTURE_2D, t.gltexture);
+                        if (t.wh)
+                            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, wh, wh, 0, gl.RGBA, type, t.source);
+                        else
+                            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, t.source);
+                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+                    }
+                    gl.bindTexture(gl.TEXTURE_2D, t.gltexture);
+                    gl.uniform2fv(cubeTexRepeatLocs[j], t.repeat);
                 } else {
                     gl.bindTexture(gl.TEXTURE_2D, blankTex);
                 }
